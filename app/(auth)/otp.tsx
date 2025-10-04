@@ -8,15 +8,14 @@ export default function OtpScreen() {
     <View style={styles.container}>
       {/* Gradient Background */}
       <LinearGradient
-        colors={["#f2c44d", "#f2c44d", "#fff"]}
+        colors={["#fff", "#f2c44d"]}
         style={styles.background}
-        locations={[0, 0.7, 1]}
+        locations={[0, 1]}
       />
 
       <View style={styles.content}>
         {/* Header Section */}
         <View style={styles.header}>
-          <Text style={styles.logo}>YDF</Text>
           <Text style={styles.title}>Enter OTP</Text>
           <Text style={styles.subtitle}>
             We have sent a 6-digit code to your email and phone
@@ -35,9 +34,6 @@ export default function OtpScreen() {
               focusedPinCodeContainerStyle: styles.otpBoxFocused,
               pinCodeTextStyle: styles.otpText,
             }}
-            onFilled={() => {
-              router.replace("/(auth)/roles");
-            }}
           />
 
           {/* Verify Button */}
@@ -52,7 +48,10 @@ export default function OtpScreen() {
           {/* Resend Link */}
           <View style={styles.resendContainer}>
             <Text style={styles.resendQuestion}>Didn't receive the code?</Text>
-            <TouchableOpacity activeOpacity={0.7}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => router.replace("/(auth)/roles")}
+            >
               <Text style={styles.resendLink}>Resend</Text>
             </TouchableOpacity>
           </View>

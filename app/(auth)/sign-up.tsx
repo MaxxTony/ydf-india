@@ -78,9 +78,9 @@ export default function SignUpScreen() {
     <View style={styles.container}>
       {/* Gradient Background */}
       <LinearGradient
-        colors={["#f2c44d", "#f2c44d", "#fff"]}
+        colors={["#fff", "#fff", "#f2c44d"]}
         style={styles.background}
-        locations={[0, 0.7, 1]}
+        locations={[0, 0.3, 1]}
       />
 
       <KeyboardAvoidingView
@@ -121,7 +121,7 @@ export default function SignUpScreen() {
                   onFocus={() => setFocusedField("firstName")}
                   onBlur={() => setFocusedField(null)}
                   placeholder="Your first name"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  placeholderTextColor="rgba(51,51,51,0.5)"
                   style={styles.input}
                 />
               </View>
@@ -146,7 +146,7 @@ export default function SignUpScreen() {
                   onFocus={() => setFocusedField("lastName")}
                   onBlur={() => setFocusedField(null)}
                   placeholder="Your last name"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  placeholderTextColor="rgba(51,51,51,0.5)"
                   style={styles.input}
                 />
               </View>
@@ -173,7 +173,7 @@ export default function SignUpScreen() {
                   autoCapitalize="none"
                   keyboardType="email-address"
                   placeholder="you@example.com"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  placeholderTextColor="rgba(51,51,51,0.5)"
                   style={styles.input}
                 />
               </View>
@@ -234,7 +234,7 @@ export default function SignUpScreen() {
                   onBlur={() => setFocusedField(null)}
                   secureTextEntry
                   placeholder="••••••••"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  placeholderTextColor="rgba(51,51,51,0.5)"
                   style={styles.input}
                 />
               </View>
@@ -260,7 +260,7 @@ export default function SignUpScreen() {
                   onBlur={() => setFocusedField(null)}
                   secureTextEntry
                   placeholder="••••••••"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  placeholderTextColor="rgba(51,51,51,0.5)"
                   style={styles.input}
                 />
               </View>
@@ -298,7 +298,7 @@ export default function SignUpScreen() {
                 style={styles.socialButton}
                 activeOpacity={0.8}
               >
-                <Ionicons name="logo-google" size={20} color="#fff" />
+                <Ionicons name="logo-google" size={20} color="#333" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -306,7 +306,15 @@ export default function SignUpScreen() {
                 style={styles.socialButton}
                 activeOpacity={0.8}
               >
-                <Ionicons name="logo-linkedin" size={20} color="#fff" />
+                <Ionicons name="logo-linkedin" size={20} color="#333" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => router.push("/(auth)/roles")}
+                style={styles.socialButton}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="logo-apple" size={20} color="#333" />
               </TouchableOpacity>
             </View>
           </View>
@@ -464,7 +472,7 @@ const styles = StyleSheet.create({
   socialContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 16,
+    gap: 12,
   },
   socialButton: {
     width: 56,

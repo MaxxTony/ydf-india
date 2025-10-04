@@ -84,7 +84,7 @@ export default function SignInScreen() {
             <Image
               source={require("@/assets/appImages/new.png")}
               resizeMode="contain"
-              style={{ width: 150, height: 150, marginBottom: 20 }}
+              style={{ width: 150, height: 150 }}
             />
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>
@@ -286,6 +286,14 @@ export default function SignInScreen() {
               >
                 <Ionicons name="logo-linkedin" size={20} color="#333" />
               </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => router.push("/(auth)/roles")}
+                style={styles.socialButton}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="logo-apple" size={20} color="#333" />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -345,9 +353,6 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 8,
     textAlign: "center",
-    textShadowColor: "rgba(255, 255, 255, 0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
   },
   subtitle: {
     fontSize: 16,
@@ -457,7 +462,7 @@ const styles = StyleSheet.create({
   socialContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 16,
+    gap: 12,
   },
   socialButton: {
     width: 56,
