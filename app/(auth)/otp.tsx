@@ -19,7 +19,7 @@ export default function OtpScreen() {
           <Text style={styles.logo}>YDF</Text>
           <Text style={styles.title}>Enter OTP</Text>
           <Text style={styles.subtitle}>
-            We have sent a 6-digit code to your email
+            We have sent a 6-digit code to your email and phone
           </Text>
         </View>
 
@@ -36,13 +36,13 @@ export default function OtpScreen() {
               pinCodeTextStyle: styles.otpText,
             }}
             onFilled={() => {
-              router.replace("/(auth)/reset");
+              router.replace("/(auth)/roles");
             }}
           />
 
           {/* Verify Button */}
           <TouchableOpacity
-            onPress={() => router.replace("/(auth)/reset")}
+            onPress={() => router.replace("/(auth)/roles")}
             style={styles.verifyButton}
             activeOpacity={0.8}
           >

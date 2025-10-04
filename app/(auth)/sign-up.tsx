@@ -1,43 +1,57 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, router } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import PhoneInput from "react-native-phone-number-input";
 
 export default function SignUpScreen() {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{
-    name?: string;
+    firstName?: string;
+    lastName?: string;
     email?: string;
+    phone?: string;
     password?: string;
     confirmPassword?: string;
   }>({});
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const phoneInput = useRef<PhoneInput>(null);
 
   const validate = () => {
     const nextErrors: {
-      name?: string;
+      firstName?: string;
+      lastName?: string;
       email?: string;
+      phone?: string;
       password?: string;
       confirmPassword?: string;
     } = {};
     const emailRegex = /^(?:[^\s@]+@[^\s@]+\.[^\s@]+)$/;
-    if (name.trim().length < 2) nextErrors.name = "Enter your full name";
+
+    if (firstName.trim().length < 2)
+      nextErrors.firstName = "Enter your first name";
+    if (lastName.trim().length < 2)
+      nextErrors.lastName = "Enter your last name";
     if (!emailRegex.test(email)) nextErrors.email = "Enter a valid email";
+    if (!phoneInput.current?.isValidNumber(phone))
+      nextErrors.phone = "Enter a valid phone number";
     if (password.length < 6) nextErrors.password = "Minimum 6 characters";
     if (confirmPassword.length < 6)
       nextErrors.confirmPassword = "Minimum 6 characters";
@@ -86,35 +100,58 @@ export default function SignUpScreen() {
               style={{ width: 150, height: 150, marginBottom: 20 }}
             />
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>
-              Sign up to start your journey
-            </Text>
+            <Text style={styles.subtitle}>Sign up to start your journey</Text>
           </View>
 
           {/* Form Card */}
           <View style={styles.card}>
-            {/* Name Input */}
+            {/* First Name Input */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Full Name</Text>
+              <Text style={styles.label}>First Name</Text>
               <View
                 style={[
                   styles.inputContainer,
-                  focusedField === "name" && styles.inputFocused,
-                  errors.name && styles.inputError,
+                  focusedField === "firstName" && styles.inputFocused,
+                  errors.firstName && styles.inputError,
                 ]}
               >
                 <TextInput
-                  value={name}
-                  onChangeText={setName}
-                  onFocus={() => setFocusedField("name")}
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  onFocus={() => setFocusedField("firstName")}
                   onBlur={() => setFocusedField(null)}
-                  placeholder="Your name"
+                  placeholder="Your first name"
                   placeholderTextColor="rgba(255,255,255,0.5)"
                   style={styles.input}
                 />
               </View>
-              {errors.name && (
-                <Text style={styles.errorText}>{errors.name}</Text>
+              {errors.firstName && (
+                <Text style={styles.errorText}>{errors.firstName}</Text>
+              )}
+            </View>
+
+            {/* Last Name Input */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Last Name</Text>
+              <View
+                style={[
+                  styles.inputContainer,
+                  focusedField === "lastName" && styles.inputFocused,
+                  errors.lastName && styles.inputError,
+                ]}
+              >
+                <TextInput
+                  value={lastName}
+                  onChangeText={setLastName}
+                  onFocus={() => setFocusedField("lastName")}
+                  onBlur={() => setFocusedField(null)}
+                  placeholder="Your last name"
+                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  style={styles.input}
+                />
+              </View>
+              {errors.lastName && (
+                <Text style={styles.errorText}>{errors.lastName}</Text>
               )}
             </View>
 
@@ -142,6 +179,41 @@ export default function SignUpScreen() {
               </View>
               {errors.email && (
                 <Text style={styles.errorText}>{errors.email}</Text>
+              )}
+            </View>
+
+            {/* Phone Input */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Phone Number</Text>
+              <View
+                style={[
+                  styles.phoneContainer,
+                  focusedField === "phone" && styles.phoneFocused,
+                  errors.phone && styles.phoneError,
+                ]}
+              >
+                <PhoneInput
+                  ref={phoneInput}
+                  defaultValue={phone}
+                  defaultCode="IN"
+                  layout="second"
+                  onChangeText={setPhone}
+                  onChangeFormattedText={(text) => {
+                    setPhone(text);
+                  }}
+                  withDarkTheme={false}
+                  withShadow={false}
+                  autoFocus={false}
+                  containerStyle={styles.phoneInputContainer}
+                  textContainerStyle={styles.phoneTextContainer}
+                  textInputStyle={styles.phoneTextInput}
+                  codeTextStyle={styles.phoneCodeText}
+                  flagButtonStyle={styles.phoneFlagButton}
+                  countryPickerButtonStyle={styles.countryPickerButton}
+                />
+              </View>
+              {errors.phone && (
+                <Text style={styles.errorText}>{errors.phone}</Text>
               )}
             </View>
 
@@ -222,7 +294,7 @@ export default function SignUpScreen() {
             {/* Social Buttons */}
             <View style={styles.socialContainer}>
               <TouchableOpacity
-                onPress={() => router.push("/(auth)/otp")}
+                onPress={() => router.push("/(auth)/roles")}
                 style={styles.socialButton}
                 activeOpacity={0.8}
               >
@@ -230,15 +302,7 @@ export default function SignUpScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => router.push("/(auth)/otp")}
-                style={styles.socialButton}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="mail-outline" size={20} color="#fff" />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => router.push("/(auth)/otp")}
+                onPress={() => router.push("/(auth)/roles")}
                 style={styles.socialButton}
                 activeOpacity={0.8}
               >
@@ -432,5 +496,56 @@ const styles = StyleSheet.create({
     color: "#333",
     fontWeight: "700",
     fontSize: 15,
+  },
+  phoneContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "rgba(51, 51, 51, 0.2)",
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  phoneFocused: {
+    borderColor: "#f2c44d",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+  },
+  phoneError: {
+    borderColor: "rgba(239, 68, 68, 0.8)",
+  },
+  phoneInputContainer: {
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    padding: 0,
+    margin: 0,
+    height: 48,
+  },
+  phoneTextContainer: {
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    padding: 0,
+    margin: 0,
+    height: 48,
+  },
+  phoneTextInput: {
+    fontSize: 16,
+    color: "#333",
+    paddingVertical: 12,
+    backgroundColor: "transparent",
+    height: 48,
+  },
+  phoneCodeText: {
+    fontSize: 16,
+    color: "#333",
+    backgroundColor: "transparent",
+  },
+  phoneFlagButton: {
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    padding: 0,
+    margin: 0,
+  },
+  countryPickerButton: {
+    backgroundColor: "transparent",
+    width: 70,
   },
 });

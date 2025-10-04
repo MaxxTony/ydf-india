@@ -1,31 +1,49 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, router } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import PhoneInput from "react-native-phone-number-input";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
+  const [errors, setErrors] = useState<{
+    email?: string;
+    phone?: string;
+    password?: string;
+  }>({});
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const phoneInput = useRef<PhoneInput>(null);
 
   const validate = () => {
-    const nextErrors: { email?: string; password?: string } = {};
+    const nextErrors: { email?: string; phone?: string; password?: string } =
+      {};
     const emailRegex = /^(?:[^\s@]+@[^\s@]+\.[^\s@]+)$/;
-    if (!emailRegex.test(email)) nextErrors.email = "Enter a valid email";
-    if (password.length < 6) nextErrors.password = "Minimum 6 characters";
+
+    if (loginMethod === "email") {
+      if (!emailRegex.test(email)) nextErrors.email = "Enter a valid email";
+    } else {
+      if (!phoneInput.current?.isValidNumber(phone))
+        nextErrors.phone = "Enter a valid phone number";
+    }
+
+    if (loginMethod === "email" && password.length < 6)
+      nextErrors.password = "Minimum 6 characters";
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -35,7 +53,11 @@ export default function SignInScreen() {
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
-      router.replace("/(auth)/roles");
+      if (loginMethod === "phone") {
+        router.replace("/(auth)/otp");
+      } else {
+        router.replace("/(auth)/roles");
+      }
     }, 300);
   };
 
@@ -43,9 +65,9 @@ export default function SignInScreen() {
     <View style={styles.container}>
       {/* Gradient Background */}
       <LinearGradient
-        colors={["#f2c44d", "#f2c44d", "#fff"]}
+        colors={["#fff", "#fff", "#f2c44d"]}
         style={styles.background}
-        locations={[0, 0.7, 1]}
+        locations={[0, 0.3, 1]}
       />
 
       <KeyboardAvoidingView
@@ -72,67 +94,154 @@ export default function SignInScreen() {
 
           {/* Form Card */}
           <View style={styles.card}>
-            {/* Email Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email Address</Text>
-              <View
+            {/* Login Method Toggle */}
+            <View style={styles.methodToggle}>
+              <TouchableOpacity
+                onPress={() => setLoginMethod("email")}
                 style={[
-                  styles.inputContainer,
-                  focusedField === "email" && styles.inputFocused,
-                  errors.email && styles.inputError,
+                  styles.toggleButton,
+                  loginMethod === "email" && styles.toggleButtonActive,
                 ]}
+                activeOpacity={0.8}
               >
-                <TextInput
-                  value={email}
-                  onChangeText={setEmail}
-                  onFocus={() => setFocusedField("email")}
-                  onBlur={() => setFocusedField(null)}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  placeholder="you@example.com"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                  style={styles.input}
-                />
-              </View>
-              {errors.email && (
+                <Text
+                  style={[
+                    styles.toggleText,
+                    loginMethod === "email" && styles.toggleTextActive,
+                  ]}
+                >
+                  Email
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setLoginMethod("phone")}
+                style={[
+                  styles.toggleButton,
+                  loginMethod === "phone" && styles.toggleButtonActive,
+                ]}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.toggleText,
+                    loginMethod === "phone" && styles.toggleTextActive,
+                  ]}
+                >
+                  Phone
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Email/Phone Input */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                {loginMethod === "email" ? "Email Address" : "Phone Number"}
+              </Text>
+              {loginMethod === "email" ? (
+                <View
+                  style={[
+                    styles.inputContainer,
+                    focusedField === "email" && styles.inputFocused,
+                    errors.email && styles.inputError,
+                  ]}
+                >
+                  <TextInput
+                    value={email}
+                    onChangeText={setEmail}
+                    onFocus={() => setFocusedField("email")}
+                    onBlur={() => setFocusedField(null)}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    placeholder="you@example.com"
+                    placeholderTextColor="rgba(51,51,51,0.5)"
+                    style={styles.input}
+                  />
+                </View>
+              ) : (
+                <View
+                  style={[
+                    styles.phoneContainer,
+                    focusedField === "phone" && styles.phoneFocused,
+                    errors.phone && styles.phoneError,
+                  ]}
+                >
+                  <PhoneInput
+                    ref={phoneInput}
+                    defaultValue={phone}
+                    defaultCode="IN"
+                    layout="second"
+                    onChangeText={setPhone}
+                    onChangeFormattedText={(text) => {
+                      setPhone(text);
+                    }}
+                    withDarkTheme={false}
+                    withShadow={false}
+                    autoFocus={false}
+                    containerStyle={styles.phoneInputContainer}
+                    textContainerStyle={styles.phoneTextContainer}
+                    textInputStyle={styles.phoneTextInput}
+                    codeTextStyle={styles.phoneCodeText}
+                    flagButtonStyle={styles.phoneFlagButton}
+                    countryPickerButtonStyle={styles.countryPickerButton}
+                  />
+                </View>
+              )}
+              {loginMethod === "email" && errors.email && (
                 <Text style={styles.errorText}>{errors.email}</Text>
               )}
-            </View>
-
-            {/* Password Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <View
-                style={[
-                  styles.inputContainer,
-                  focusedField === "password" && styles.inputFocused,
-                  errors.password && styles.inputError,
-                ]}
-              >
-                <TextInput
-                  value={password}
-                  onChangeText={setPassword}
-                  onFocus={() => setFocusedField("password")}
-                  onBlur={() => setFocusedField(null)}
-                  secureTextEntry
-                  placeholder="••••••••"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                  style={styles.input}
-                />
-              </View>
-              {errors.password && (
-                <Text style={styles.errorText}>{errors.password}</Text>
+              {loginMethod === "phone" && errors.phone && (
+                <Text style={styles.errorText}>{errors.phone}</Text>
               )}
             </View>
 
-            {/* Forgot Password */}
-            <View style={styles.forgotContainer}>
-              <Link href="/(auth)/forgot" asChild>
-                <TouchableOpacity activeOpacity={0.7}>
-                  <Text style={styles.forgotText}>Forgot password?</Text>
-                </TouchableOpacity>
-              </Link>
-            </View>
+            {/* Password Input - Only show for email login */}
+            {loginMethod === "email" && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Password</Text>
+                <View
+                  style={[
+                    styles.inputContainer,
+                    focusedField === "password" && styles.inputFocused,
+                    errors.password && styles.inputError,
+                  ]}
+                >
+                  <TextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    onFocus={() => setFocusedField("password")}
+                    onBlur={() => setFocusedField(null)}
+                    secureTextEntry={!showPassword}
+                    placeholder="••••••••"
+                    placeholderTextColor="rgba(51,51,51,0.5)"
+                    style={styles.input}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.passwordToggle}
+                  >
+                    <Ionicons
+                      name={showPassword ? "eye-off" : "eye"}
+                      size={20}
+                      color="#666"
+                    />
+                  </TouchableOpacity>
+                </View>
+                {errors.password && (
+                  <Text style={styles.errorText}>{errors.password}</Text>
+                )}
+              </View>
+            )}
+
+            {/* Forgot Password - Only show for email login */}
+            {loginMethod === "email" && (
+              <View style={styles.forgotContainer}>
+                <Link href="/(auth)/forgot" asChild>
+                  <TouchableOpacity activeOpacity={0.7}>
+                    <Text style={styles.forgotText}>Forgot password?</Text>
+                  </TouchableOpacity>
+                </Link>
+              </View>
+            )}
 
             {/* Sign In Button */}
             <TouchableOpacity
@@ -145,7 +254,11 @@ export default function SignInScreen() {
               activeOpacity={0.8}
             >
               <Text style={styles.signInText}>
-                {submitting ? "Signing in..." : "Sign in"}
+                {submitting
+                  ? "Signing in..."
+                  : loginMethod === "phone"
+                  ? "Next"
+                  : "Sign in"}
               </Text>
             </TouchableOpacity>
 
@@ -159,27 +272,19 @@ export default function SignInScreen() {
             {/* Social Buttons */}
             <View style={styles.socialContainer}>
               <TouchableOpacity
-                onPress={() => router.push("/(auth)/otp")}
+                onPress={() => router.push("/(auth)/roles")}
                 style={styles.socialButton}
                 activeOpacity={0.8}
               >
-                <Ionicons name="logo-google" size={20} color="#fff" />
+                <Ionicons name="logo-google" size={20} color="#333" />
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => router.push("/(auth)/otp")}
+                onPress={() => router.push("/(auth)/roles")}
                 style={styles.socialButton}
                 activeOpacity={0.8}
               >
-                <Ionicons name="mail-outline" size={20} color="#fff" />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => router.push("/(auth)/otp")}
-                style={styles.socialButton}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="logo-linkedin" size={20} color="#fff" />
+                <Ionicons name="logo-linkedin" size={20} color="#333" />
               </TouchableOpacity>
             </View>
           </View>
@@ -278,6 +383,8 @@ const styles = StyleSheet.create({
     borderColor: "rgba(51, 51, 51, 0.2)",
     paddingHorizontal: 16,
     paddingVertical: 4,
+    flexDirection: "row",
+    alignItems: "center",
   },
   inputFocused: {
     borderColor: "#f2c44d",
@@ -290,6 +397,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
     paddingVertical: 12,
+    flex: 1,
+  },
+  passwordToggle: {
+    padding: 8,
+    marginRight: -8,
   },
   errorText: {
     color: "#FCA5A5",
@@ -377,5 +489,81 @@ const styles = StyleSheet.create({
     color: "#333",
     fontWeight: "700",
     fontSize: 15,
+  },
+  methodToggle: {
+    flexDirection: "row",
+    backgroundColor: "rgba(51, 51, 51, 0.1)",
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 24,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  toggleButtonActive: {
+    backgroundColor: "#333",
+  },
+  toggleText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "rgba(51, 51, 51, 0.7)",
+  },
+  toggleTextActive: {
+    color: "#fff",
+  },
+  phoneContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "rgba(51, 51, 51, 0.2)",
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  phoneFocused: {
+    borderColor: "#f2c44d",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+  },
+  phoneError: {
+    borderColor: "rgba(239, 68, 68, 0.8)",
+  },
+  phoneInputContainer: {
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    padding: 0,
+    margin: 0,
+    height: 48,
+  },
+  phoneTextContainer: {
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    padding: 0,
+    margin: 0,
+    height: 48,
+  },
+  phoneTextInput: {
+    fontSize: 16,
+    color: "#333",
+    paddingVertical: 12,
+    backgroundColor: "transparent",
+    height: 48,
+  },
+  phoneCodeText: {
+    fontSize: 16,
+    color: "#333",
+    backgroundColor: "transparent",
+  },
+  phoneFlagButton: {
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    padding: 0,
+    margin: 0,
+  },
+  countryPickerButton: {
+    backgroundColor: "transparent",
+    width: 70,
   },
 });

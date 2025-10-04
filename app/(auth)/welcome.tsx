@@ -8,9 +8,9 @@ export default function WelcomeScreen() {
     <View style={styles.container}>
       {/* Gradient Background */}
       <LinearGradient
-        colors={["#f2c44d", "#f2c44d", "#fff"]}
+        colors={["#fff", "#fff", "#f2c44d"]}
         style={styles.background}
-        locations={[0, 0.7, 1]}
+        locations={[0, 0.3, 1]}
       />
 
       {/* Content */}
@@ -20,7 +20,7 @@ export default function WelcomeScreen() {
           <Image
             source={require("@/assets/appImages/new.png")}
             resizeMode="contain"
-            style={{ width: 150, height: 150 }}
+            style={{ width: 200, height: 200 }}
           />
         </View>
 
@@ -59,7 +59,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f2c44d",
+    backgroundColor: "#fff",
   },
   background: {
     position: "absolute",
@@ -103,6 +103,7 @@ const styles = StyleSheet.create({
     color: "#333",
     textAlign: "center",
     marginBottom: 8,
+    fontWeight: "500",
   },
   buttonContainer: {
     gap: 14,
@@ -140,7 +141,7 @@ const styles = StyleSheet.create({
   },
   termsText: {
     fontSize: 12,
-    color: "#666",
+    color: "#000",
     textAlign: "center",
     marginTop: 8,
     lineHeight: 18,
