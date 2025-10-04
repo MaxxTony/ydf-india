@@ -1,16 +1,16 @@
+import { Button, CustomTextInput } from "@/components";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import {
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 
 export default function ForgotPasswordScreen() {
@@ -42,9 +42,9 @@ export default function ForgotPasswordScreen() {
     <View style={styles.container}>
       {/* Gradient Background */}
       <LinearGradient
-        colors={["#f2c44d", "#f2c44d", "#fff"]}
+        colors={["#fff", "#fff", "#f2c44d"]}
         style={styles.background}
-        locations={[0, 0.7, 1]}
+        locations={[0, 0.3, 1]}
       />
 
       <KeyboardAvoidingView
@@ -72,44 +72,27 @@ export default function ForgotPasswordScreen() {
           {/* Form Card */}
           <View style={styles.card}>
             {/* Email Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email Address</Text>
-              <View
-                style={[
-                  styles.inputContainer,
-                  focusedField === "email" && styles.inputFocused,
-                  error && styles.inputError,
-                ]}
-              >
-                <TextInput
-                  value={email}
-                  onChangeText={setEmail}
-                  onFocus={() => setFocusedField("email")}
-                  onBlur={() => setFocusedField(null)}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  placeholder="you@example.com"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                  style={styles.input}
-                />
-              </View>
-              {error && <Text style={styles.errorText}>{error}</Text>}
-            </View>
+            <CustomTextInput
+              label="Email Address"
+              placeholder="you@example.com"
+              value={email}
+              onChangeText={setEmail}
+              onFocus={() => setFocusedField("email")}
+              onBlur={() => setFocusedField(null)}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              error={error}
+              focused={focusedField === "email"}
+            />
 
             {/* Send OTP Button */}
-            <TouchableOpacity
+            <Button
+              title={submitting ? "Sending..." : "Send OTP"}
               onPress={onSubmit}
               disabled={submitting}
-              style={[
-                styles.sendButton,
-                submitting && styles.sendButtonDisabled,
-              ]}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.sendText}>
-                {submitting ? "Sending..." : "Send OTP"}
-              </Text>
-            </TouchableOpacity>
+              loading={submitting}
+              variant="primary"
+            />
           </View>
 
           {/* Sign In Link */}

@@ -1,3 +1,4 @@
+import { Button, CustomTextInput } from "@/components";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, router } from "expo-router";
@@ -9,9 +10,8 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import PhoneInput from "react-native-phone-number-input";
 
@@ -106,81 +106,42 @@ export default function SignUpScreen() {
           {/* Form Card */}
           <View style={styles.card}>
             {/* First Name Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>First Name</Text>
-              <View
-                style={[
-                  styles.inputContainer,
-                  focusedField === "firstName" && styles.inputFocused,
-                  errors.firstName && styles.inputError,
-                ]}
-              >
-                <TextInput
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  onFocus={() => setFocusedField("firstName")}
-                  onBlur={() => setFocusedField(null)}
-                  placeholder="Your first name"
-                  placeholderTextColor="rgba(51,51,51,0.5)"
-                  style={styles.input}
-                />
-              </View>
-              {errors.firstName && (
-                <Text style={styles.errorText}>{errors.firstName}</Text>
-              )}
-            </View>
+            <CustomTextInput
+              label="First Name"
+              placeholder="Your first name"
+              value={firstName}
+              onChangeText={setFirstName}
+              onFocus={() => setFocusedField("firstName")}
+              onBlur={() => setFocusedField(null)}
+              error={errors.firstName}
+              focused={focusedField === "firstName"}
+            />
 
             {/* Last Name Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Last Name</Text>
-              <View
-                style={[
-                  styles.inputContainer,
-                  focusedField === "lastName" && styles.inputFocused,
-                  errors.lastName && styles.inputError,
-                ]}
-              >
-                <TextInput
-                  value={lastName}
-                  onChangeText={setLastName}
-                  onFocus={() => setFocusedField("lastName")}
-                  onBlur={() => setFocusedField(null)}
-                  placeholder="Your last name"
-                  placeholderTextColor="rgba(51,51,51,0.5)"
-                  style={styles.input}
-                />
-              </View>
-              {errors.lastName && (
-                <Text style={styles.errorText}>{errors.lastName}</Text>
-              )}
-            </View>
+            <CustomTextInput
+              label="Last Name"
+              placeholder="Your last name"
+              value={lastName}
+              onChangeText={setLastName}
+              onFocus={() => setFocusedField("lastName")}
+              onBlur={() => setFocusedField(null)}
+              error={errors.lastName}
+              focused={focusedField === "lastName"}
+            />
 
             {/* Email Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email Address</Text>
-              <View
-                style={[
-                  styles.inputContainer,
-                  focusedField === "email" && styles.inputFocused,
-                  errors.email && styles.inputError,
-                ]}
-              >
-                <TextInput
-                  value={email}
-                  onChangeText={setEmail}
-                  onFocus={() => setFocusedField("email")}
-                  onBlur={() => setFocusedField(null)}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  placeholder="you@example.com"
-                  placeholderTextColor="rgba(51,51,51,0.5)"
-                  style={styles.input}
-                />
-              </View>
-              {errors.email && (
-                <Text style={styles.errorText}>{errors.email}</Text>
-              )}
-            </View>
+            <CustomTextInput
+              label="Email Address"
+              placeholder="you@example.com"
+              value={email}
+              onChangeText={setEmail}
+              onFocus={() => setFocusedField("email")}
+              onBlur={() => setFocusedField(null)}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              error={errors.email}
+              focused={focusedField === "email"}
+            />
 
             {/* Phone Input */}
             <View style={styles.inputGroup}>
@@ -218,71 +179,41 @@ export default function SignUpScreen() {
             </View>
 
             {/* Password Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <View
-                style={[
-                  styles.inputContainer,
-                  focusedField === "password" && styles.inputFocused,
-                  errors.password && styles.inputError,
-                ]}
-              >
-                <TextInput
-                  value={password}
-                  onChangeText={setPassword}
-                  onFocus={() => setFocusedField("password")}
-                  onBlur={() => setFocusedField(null)}
-                  secureTextEntry
-                  placeholder="••••••••"
-                  placeholderTextColor="rgba(51,51,51,0.5)"
-                  style={styles.input}
-                />
-              </View>
-              {errors.password && (
-                <Text style={styles.errorText}>{errors.password}</Text>
-              )}
-            </View>
+            <CustomTextInput
+              label="Password"
+              placeholder="••••••••"
+              value={password}
+              onChangeText={setPassword}
+              onFocus={() => setFocusedField("password")}
+              onBlur={() => setFocusedField(null)}
+              secureTextEntry={true}
+              error={errors.password}
+              focused={focusedField === "password"}
+              showPasswordToggle={true}
+            />
 
             {/* Confirm Password Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Confirm Password</Text>
-              <View
-                style={[
-                  styles.inputContainer,
-                  focusedField === "confirmPassword" && styles.inputFocused,
-                  errors.confirmPassword && styles.inputError,
-                ]}
-              >
-                <TextInput
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  onFocus={() => setFocusedField("confirmPassword")}
-                  onBlur={() => setFocusedField(null)}
-                  secureTextEntry
-                  placeholder="••••••••"
-                  placeholderTextColor="rgba(51,51,51,0.5)"
-                  style={styles.input}
-                />
-              </View>
-              {errors.confirmPassword && (
-                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-              )}
-            </View>
+            <CustomTextInput
+              label="Confirm Password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              onFocus={() => setFocusedField("confirmPassword")}
+              onBlur={() => setFocusedField(null)}
+              secureTextEntry={true}
+              error={errors.confirmPassword}
+              focused={focusedField === "confirmPassword"}
+              showPasswordToggle={true}
+            />
 
             {/* Create Account Button */}
-            <TouchableOpacity
+            <Button
+              title={submitting ? "Creating account..." : "Create account"}
               onPress={onSubmit}
               disabled={submitting}
-              style={[
-                styles.signUpButton,
-                submitting && styles.signUpButtonDisabled,
-              ]}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.signUpText}>
-                {submitting ? "Creating account..." : "Create account"}
-              </Text>
-            </TouchableOpacity>
+              loading={submitting}
+              variant="primary"
+            />
 
             {/* Divider */}
             <View style={styles.dividerContainer}>
@@ -293,29 +224,32 @@ export default function SignUpScreen() {
 
             {/* Social Buttons */}
             <View style={styles.socialContainer}>
-              <TouchableOpacity
+              <Button
+                title=""
                 onPress={() => router.push("/(auth)/roles")}
+                variant="social"
                 style={styles.socialButton}
-                activeOpacity={0.8}
               >
                 <Ionicons name="logo-google" size={20} color="#333" />
-              </TouchableOpacity>
+              </Button>
 
-              <TouchableOpacity
+              <Button
+                title=""
                 onPress={() => router.push("/(auth)/roles")}
+                variant="social"
                 style={styles.socialButton}
-                activeOpacity={0.8}
               >
                 <Ionicons name="logo-linkedin" size={20} color="#333" />
-              </TouchableOpacity>
+              </Button>
 
-              <TouchableOpacity
+              <Button
+                title=""
                 onPress={() => router.push("/(auth)/roles")}
+                variant="social"
                 style={styles.socialButton}
-                activeOpacity={0.8}
               >
                 <Ionicons name="logo-apple" size={20} color="#333" />
-              </TouchableOpacity>
+              </Button>
             </View>
           </View>
 
@@ -456,7 +390,7 @@ const styles = StyleSheet.create({
   dividerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 24,
+    marginVertical: 24,
   },
   dividerLine: {
     flex: 1,

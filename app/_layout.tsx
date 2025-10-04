@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 
 export default function RootLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false }} >
       {/* Auth screens */}
       <Stack.Screen name="(auth)/welcome" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)/sign-in" options={{ title: "Sign in" }} />
@@ -13,7 +13,10 @@ export default function RootLayout() {
       <Stack.Screen name="(auth)/roles" options={{ title: "Select role" }} />
 
       {/* App screens */}
-      <Stack.Screen name="(app)/dashboard" options={{ title: "Dashboard" }} />
+   
+      <Stack.Screen name="(app)/employee-dashboard" options={{ title: "Employee Dashboard" }} />
+      <Stack.Screen name="(app)/student-dashboard" options={{ title: "Student Dashboard" }} />
+      <Stack.Screen name="(app)/donor-dashboard" options={{ title: "Donor Dashboard" }} />
     </Stack>
   );
 }

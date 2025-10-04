@@ -1,6 +1,7 @@
+import { Button } from "@/components";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 
 export default function WelcomeScreen() {
 
@@ -32,18 +33,21 @@ export default function WelcomeScreen() {
 
           <View style={styles.buttonContainer}>
             <Link href="/(auth)/sign-in" asChild>
-              <TouchableOpacity style={styles.signInButton} activeOpacity={0.8}>
-                <Text style={styles.signInText}>Sign in</Text>
-              </TouchableOpacity>
+              <Button
+                title="Sign in"
+                onPress={() => {}}
+                variant="primary"
+                style={styles.signInButton}
+              />
             </Link>
 
             <Link href="/(auth)/sign-up" asChild>
-              <TouchableOpacity
+              <Button
+                title="Create account"
+                onPress={() => {}}
+                variant="secondary"
                 style={styles.createAccountButton}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.createAccountText}>Create account</Text>
-              </TouchableOpacity>
+              />
             </Link>
           </View>
 

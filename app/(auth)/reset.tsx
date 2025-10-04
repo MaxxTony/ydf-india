@@ -1,3 +1,4 @@
+import { Button, CustomTextInput } from "@/components";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -8,8 +9,6 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
-    TouchableOpacity,
     View
 } from "react-native";
 
@@ -81,71 +80,41 @@ export default function ResetPasswordScreen() {
           {/* Form Card */}
           <View style={styles.card}>
             {/* Password Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>New Password</Text>
-              <View
-                style={[
-                  styles.inputContainer,
-                  focusedField === "password" && styles.inputFocused,
-                  errors.password && styles.inputError,
-                ]}
-              >
-                <TextInput
-                  value={password}
-                  onChangeText={setPassword}
-                  onFocus={() => setFocusedField("password")}
-                  onBlur={() => setFocusedField(null)}
-                  secureTextEntry
-                  placeholder="••••••••"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                  style={styles.input}
-                />
-              </View>
-              {errors.password && (
-                <Text style={styles.errorText}>{errors.password}</Text>
-              )}
-            </View>
+            <CustomTextInput
+              label="New Password"
+              placeholder="••••••••"
+              value={password}
+              onChangeText={setPassword}
+              onFocus={() => setFocusedField("password")}
+              onBlur={() => setFocusedField(null)}
+              secureTextEntry={true}
+              error={errors.password}
+              focused={focusedField === "password"}
+              showPasswordToggle={true}
+            />
 
             {/* Confirm Password Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Confirm Password</Text>
-              <View
-                style={[
-                  styles.inputContainer,
-                  focusedField === "confirmPassword" && styles.inputFocused,
-                  errors.confirmPassword && styles.inputError,
-                ]}
-              >
-                <TextInput
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  onFocus={() => setFocusedField("confirmPassword")}
-                  onBlur={() => setFocusedField(null)}
-                  secureTextEntry
-                  placeholder="••••••••"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                  style={styles.input}
-                />
-              </View>
-              {errors.confirmPassword && (
-                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-              )}
-            </View>
+            <CustomTextInput
+              label="Confirm Password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              onFocus={() => setFocusedField("confirmPassword")}
+              onBlur={() => setFocusedField(null)}
+              secureTextEntry={true}
+              error={errors.confirmPassword}
+              focused={focusedField === "confirmPassword"}
+              showPasswordToggle={true}
+            />
 
             {/* Update Password Button */}
-            <TouchableOpacity
+            <Button
+              title={submitting ? "Updating..." : "Update password"}
               onPress={onSubmit}
               disabled={submitting}
-              style={[
-                styles.updateButton,
-                submitting && styles.updateButtonDisabled,
-              ]}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.updateText}>
-                {submitting ? "Updating..." : "Update password"}
-              </Text>
-            </TouchableOpacity>
+              loading={submitting}
+              variant="primary"
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

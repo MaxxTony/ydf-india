@@ -1,3 +1,4 @@
+import { Button, CustomTextInput } from "@/components";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, router } from "expo-router";
@@ -9,9 +10,8 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import PhoneInput from "react-native-phone-number-input";
 
@@ -133,31 +133,22 @@ export default function SignInScreen() {
             </View>
 
             {/* Email/Phone Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>
-                {loginMethod === "email" ? "Email Address" : "Phone Number"}
-              </Text>
-              {loginMethod === "email" ? (
-                <View
-                  style={[
-                    styles.inputContainer,
-                    focusedField === "email" && styles.inputFocused,
-                    errors.email && styles.inputError,
-                  ]}
-                >
-                  <TextInput
-                    value={email}
-                    onChangeText={setEmail}
-                    onFocus={() => setFocusedField("email")}
-                    onBlur={() => setFocusedField(null)}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    placeholder="you@example.com"
-                    placeholderTextColor="rgba(51,51,51,0.5)"
-                    style={styles.input}
-                  />
-                </View>
-              ) : (
+            {loginMethod === "email" ? (
+              <CustomTextInput
+                label="Email Address"
+                placeholder="you@example.com"
+                value={email}
+                onChangeText={setEmail}
+                onFocus={() => setFocusedField("email")}
+                onBlur={() => setFocusedField(null)}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                error={errors.email}
+                focused={focusedField === "email"}
+              />
+            ) : (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Phone Number</Text>
                 <View
                   style={[
                     styles.phoneContainer,
@@ -185,51 +176,26 @@ export default function SignInScreen() {
                     countryPickerButtonStyle={styles.countryPickerButton}
                   />
                 </View>
-              )}
-              {loginMethod === "email" && errors.email && (
-                <Text style={styles.errorText}>{errors.email}</Text>
-              )}
-              {loginMethod === "phone" && errors.phone && (
-                <Text style={styles.errorText}>{errors.phone}</Text>
-              )}
-            </View>
+                {errors.phone && (
+                  <Text style={styles.errorText}>{errors.phone}</Text>
+                )}
+              </View>
+            )}
 
             {/* Password Input - Only show for email login */}
             {loginMethod === "email" && (
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password</Text>
-                <View
-                  style={[
-                    styles.inputContainer,
-                    focusedField === "password" && styles.inputFocused,
-                    errors.password && styles.inputError,
-                  ]}
-                >
-                  <TextInput
-                    value={password}
-                    onChangeText={setPassword}
-                    onFocus={() => setFocusedField("password")}
-                    onBlur={() => setFocusedField(null)}
-                    secureTextEntry={!showPassword}
-                    placeholder="••••••••"
-                    placeholderTextColor="rgba(51,51,51,0.5)"
-                    style={styles.input}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.passwordToggle}
-                  >
-                    <Ionicons
-                      name={showPassword ? "eye-off" : "eye"}
-                      size={20}
-                      color="#666"
-                    />
-                  </TouchableOpacity>
-                </View>
-                {errors.password && (
-                  <Text style={styles.errorText}>{errors.password}</Text>
-                )}
-              </View>
+              <CustomTextInput
+                label="Password"
+                placeholder="••••••••"
+                value={password}
+                onChangeText={setPassword}
+                onFocus={() => setFocusedField("password")}
+                onBlur={() => setFocusedField(null)}
+                secureTextEntry={!showPassword}
+                error={errors.password}
+                focused={focusedField === "password"}
+                showPasswordToggle={true}
+              />
             )}
 
             {/* Forgot Password - Only show for email login */}
@@ -244,23 +210,17 @@ export default function SignInScreen() {
             )}
 
             {/* Sign In Button */}
-            <TouchableOpacity
+            <Button
+              title={submitting
+                ? "Signing in..."
+                : loginMethod === "phone"
+                ? "Next"
+                : "Sign in"}
               onPress={onSubmit}
               disabled={submitting}
-              style={[
-                styles.signInButton,
-                submitting && styles.signInButtonDisabled,
-              ]}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.signInText}>
-                {submitting
-                  ? "Signing in..."
-                  : loginMethod === "phone"
-                  ? "Next"
-                  : "Sign in"}
-              </Text>
-            </TouchableOpacity>
+              loading={submitting}
+              variant="primary"
+            />
 
             {/* Divider */}
             <View style={styles.dividerContainer}>
@@ -271,29 +231,32 @@ export default function SignInScreen() {
 
             {/* Social Buttons */}
             <View style={styles.socialContainer}>
-              <TouchableOpacity
+              <Button
+                title=""
                 onPress={() => router.push("/(auth)/roles")}
+                variant="social"
                 style={styles.socialButton}
-                activeOpacity={0.8}
               >
                 <Ionicons name="logo-google" size={20} color="#333" />
-              </TouchableOpacity>
+              </Button>
 
-              <TouchableOpacity
+              <Button
+                title=""
                 onPress={() => router.push("/(auth)/roles")}
+                variant="social"
                 style={styles.socialButton}
-                activeOpacity={0.8}
               >
                 <Ionicons name="logo-linkedin" size={20} color="#333" />
-              </TouchableOpacity>
+              </Button>
 
-              <TouchableOpacity
+              <Button
+                title=""
                 onPress={() => router.push("/(auth)/roles")}
+                variant="social"
                 style={styles.socialButton}
-                activeOpacity={0.8}
               >
                 <Ionicons name="logo-apple" size={20} color="#333" />
-              </TouchableOpacity>
+              </Button>
             </View>
           </View>
 

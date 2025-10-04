@@ -1,3 +1,4 @@
+import { Button } from "@/components";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -37,13 +38,11 @@ export default function OtpScreen() {
           />
 
           {/* Verify Button */}
-          <TouchableOpacity
+          <Button
+            title="Verify"
             onPress={() => router.replace("/(auth)/roles")}
-            style={styles.verifyButton}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.verifyText}>Verify</Text>
-          </TouchableOpacity>
+            variant="primary"
+          />
 
           {/* Resend Link */}
           <View style={styles.resendContainer}>
