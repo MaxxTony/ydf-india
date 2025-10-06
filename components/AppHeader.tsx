@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Platform, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Props = {
@@ -18,7 +18,7 @@ export default function AppHeader({ title, onBack, rightIcon }: Props) {
         alignItems: "center",
         justifyContent: "space-between",
         padding: 20,
-        paddingTop: Platform.OS === "ios" ? inset.top + 20 : 20,
+        paddingTop: inset.top + 20 ,
         backgroundColor: "#fff",
         borderBottomWidth: 1,
         borderColor: "#f0f0f0",

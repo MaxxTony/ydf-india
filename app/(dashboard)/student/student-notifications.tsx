@@ -1,14 +1,32 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import React, { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import AppHeader from "../../../components/AppHeader";
 
-const notifications = [
+const now = new Date();
+const daysAgo = (n: number) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000).toISOString();
+const hoursAgo = (n: number) => new Date(now.getTime() - n * 60 * 60 * 1000).toISOString();
+
+type NotificationItem = {
+  id: number;
+  title: string;
+  message: string;
+  time: string;
+  date: string; // ISO string for grouping
+  type: "application" | "deadline" | "document" | "approval" | "announcement" | "system";
+  isRead: boolean;
+  priority: "low" | "medium" | "high";
+};
+
+const initialNotifications: NotificationItem[] = [
   {
     id: 1,
     title: "Application Status Update",
     message: "Your Merit Scholarship application is now under review",
     time: "2 hours ago",
+    date: hoursAgo(2),
     type: "application",
     isRead: false,
     priority: "high"
@@ -18,6 +36,7 @@ const notifications = [
     title: "Deadline Reminder",
     message: "STEM Excellence Award deadline is in 3 days",
     time: "1 day ago",
+    date: daysAgo(1),
     type: "deadline",
     isRead: false,
     priority: "high"
@@ -27,6 +46,7 @@ const notifications = [
     title: "Document Required",
     message: "Please upload your official transcript for Need-Based Grant",
     time: "2 days ago",
+    date: daysAgo(2),
     type: "document",
     isRead: true,
     priority: "medium"
@@ -36,6 +56,7 @@ const notifications = [
     title: "Application Approved",
     message: "Congratulations! Your Community Service Scholarship has been approved",
     time: "3 days ago",
+    date: daysAgo(3),
     type: "approval",
     isRead: true,
     priority: "high"
@@ -45,6 +66,7 @@ const notifications = [
     title: "New Scholarship Available",
     message: "International Student Fund is now accepting applications",
     time: "1 week ago",
+    date: daysAgo(7),
     type: "announcement",
     isRead: true,
     priority: "low"
@@ -54,6 +76,7 @@ const notifications = [
     title: "System Maintenance",
     message: "The platform will be under maintenance on Sunday 2-4 AM",
     time: "1 week ago",
+    date: daysAgo(7),
     type: "system",
     isRead: true,
     priority: "low"
@@ -70,7 +93,47 @@ const notificationTypes = {
 };
 
 export default function NotificationsScreen() {
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
+  const [filter, setFilter] = useState<
+    "all" | "application" | "deadline" | "document" | "approval" | "announcement" | "system"
+  >("all");
+
+  const unreadCount = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
+
+  const filteredNotifications = useMemo(() => {
+    if (filter === "all") return notifications;
+    return notifications.filter(n => n.type === filter);
+  }, [notifications, filter]);
+
+  const groups = useMemo(() => {
+    const today: NotificationItem[] = [];
+    const thisWeek: NotificationItem[] = [];
+    const older: NotificationItem[] = [];
+    const nowDate = new Date();
+    const startOfToday = new Date(nowDate);
+    startOfToday.setHours(0, 0, 0, 0);
+    const sevenDaysAgo = new Date(nowDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    filteredNotifications
+      .slice()
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .forEach(n => {
+        const d = new Date(n.date);
+        if (d >= startOfToday) {
+          today.push(n);
+        } else if (d >= sevenDaysAgo) {
+          thisWeek.push(n);
+        } else {
+          older.push(n);
+        }
+      });
+
+    return { today, thisWeek, older };
+  }, [filteredNotifications]);
+
+  const markAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
 
   return (
     <View style={styles.container}>
@@ -81,17 +144,18 @@ export default function NotificationsScreen() {
         locations={[0, 0.3, 1]}
       />
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Notifications</Text>
-          <TouchableOpacity style={styles.markAllButton}>
+      {/* Header outside ScrollView */}
+      <AppHeader
+        title="Notifications"
+        onBack={() => router.back()}
+        rightIcon={
+          <TouchableOpacity onPress={markAllRead}>
             <Text style={styles.markAllText}>Mark All Read</Text>
           </TouchableOpacity>
-        </View>
+        }
+      />
+
+      <ScrollView style={styles.scrollView} contentContainerStyle={{paddingVertical:20}} showsVerticalScrollIndicator={false}>
 
         {/* Notification Stats */}
         <View style={styles.statsContainer}>
@@ -104,7 +168,7 @@ export default function NotificationsScreen() {
             <Text style={styles.statLabel}>Total</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>3</Text>
+            <Text style={styles.statNumber}>{groups.thisWeek.length}</Text>
             <Text style={styles.statLabel}>This Week</Text>
           </View>
         </View>
@@ -112,65 +176,147 @@ export default function NotificationsScreen() {
         {/* Filter Tabs */}
         <View style={styles.filterContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-            <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]}>
-              <Text style={[styles.filterText, styles.filterTextActive]}>All</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.filterChip}>
-              <Text style={styles.filterText}>Applications</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.filterChip}>
-              <Text style={styles.filterText}>Deadlines</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.filterChip}>
-              <Text style={styles.filterText}>Documents</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.filterChip}>
-              <Text style={styles.filterText}>System</Text>
-            </TouchableOpacity>
+            {[
+              { key: "all", label: "All" },
+              { key: "application", label: "Applications" },
+              { key: "deadline", label: "Deadlines" },
+              { key: "document", label: "Documents" },
+              { key: "approval", label: "Approvals" },
+              { key: "announcement", label: "Announcements" },
+              { key: "system", label: "System" },
+            ].map(tab => (
+              <TouchableOpacity
+                key={tab.key}
+                onPress={() => setFilter(tab.key as any)}
+                style={[styles.filterChip, filter === (tab.key as any) && styles.filterChipActive]}
+              >
+                <Text style={[styles.filterText, filter === (tab.key as any) && styles.filterTextActive]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </ScrollView>
         </View>
 
-        {/* Notifications List */}
+        {/* Notifications List - Grouped */}
         <View style={styles.notificationsContainer}>
-          {notifications.map((notification) => {
-            const typeInfo = notificationTypes[notification.type as keyof typeof notificationTypes];
-            return (
-              <TouchableOpacity
-                key={notification.id}
-                style={[
-                  styles.notificationCard,
-                  !notification.isRead && styles.notificationCardUnread
-                ]}
-                activeOpacity={0.8}
-              >
-                <View style={styles.notificationContent}>
-                  <View style={[styles.notificationIcon, { backgroundColor: typeInfo.color + '20' }]}>
-                    <Ionicons name={typeInfo.icon as any} size={20} color={typeInfo.color} />
-                  </View>
-                  <View style={styles.notificationInfo}>
-                    <View style={styles.notificationHeader}>
-                      <Text style={[
-                        styles.notificationTitle,
-                        !notification.isRead && styles.notificationTitleUnread
-                      ]}>
-                        {notification.title}
-                      </Text>
-                      {!notification.isRead && <View style={styles.unreadDot} />}
+          {groups.today.length > 0 && (
+            <>
+              <Text style={styles.groupHeader}>Today</Text>
+              {groups.today.map((notification) => {
+                const typeInfo = notificationTypes[notification.type as keyof typeof notificationTypes];
+                return (
+                  <TouchableOpacity
+                    key={`today-${notification.id}`}
+                    style={[
+                      styles.notificationCard,
+                      !notification.isRead && styles.notificationCardUnread
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.notificationContent}>
+                      <View style={[styles.notificationIcon, { backgroundColor: typeInfo.color + '20' }]}>
+                        <Ionicons name={typeInfo.icon as any} size={20} color={typeInfo.color} />
+                      </View>
+                      <View style={styles.notificationInfo}>
+                        <View style={styles.notificationHeader}>
+                          <Text style={[
+                            styles.notificationTitle,
+                            !notification.isRead && styles.notificationTitleUnread
+                          ]}>
+                            {notification.title}
+                          </Text>
+                          {!notification.isRead && <View style={styles.unreadDot} />}
+                        </View>
+                        <Text style={styles.notificationMessage}>{notification.message}</Text>
+                        <Text style={styles.notificationTime}>{notification.time}</Text>
+                      </View>
                     </View>
-                    <Text style={styles.notificationMessage}>{notification.message}</Text>
-                    <Text style={styles.notificationTime}>{notification.time}</Text>
-                  </View>
-                  <TouchableOpacity style={styles.moreButton}>
-                    <Ionicons name="ellipsis-vertical" size={16} color="#666" />
                   </TouchableOpacity>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+                );
+              })}
+            </>
+          )}
+
+          {groups.thisWeek.length > 0 && (
+            <>
+              <Text style={styles.groupHeader}>This Week</Text>
+              {groups.thisWeek.map((notification) => {
+                const typeInfo = notificationTypes[notification.type as keyof typeof notificationTypes];
+                return (
+                  <TouchableOpacity
+                    key={`week-${notification.id}`}
+                    style={[
+                      styles.notificationCard,
+                      !notification.isRead && styles.notificationCardUnread
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.notificationContent}>
+                      <View style={[styles.notificationIcon, { backgroundColor: typeInfo.color + '20' }]}>
+                        <Ionicons name={typeInfo.icon as any} size={20} color={typeInfo.color} />
+                      </View>
+                      <View style={styles.notificationInfo}>
+                        <View style={styles.notificationHeader}>
+                          <Text style={[
+                            styles.notificationTitle,
+                            !notification.isRead && styles.notificationTitleUnread
+                          ]}>
+                            {notification.title}
+                          </Text>
+                          {!notification.isRead && <View style={styles.unreadDot} />}
+                        </View>
+                        <Text style={styles.notificationMessage}>{notification.message}</Text>
+                        <Text style={styles.notificationTime}>{notification.time}</Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </>
+          )}
+
+          {groups.older.length > 0 && (
+            <>
+              <Text style={styles.groupHeader}>Older</Text>
+              {groups.older.map((notification) => {
+                const typeInfo = notificationTypes[notification.type as keyof typeof notificationTypes];
+                return (
+                  <TouchableOpacity
+                    key={`older-${notification.id}`}
+                    style={[
+                      styles.notificationCard,
+                      !notification.isRead && styles.notificationCardUnread
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.notificationContent}>
+                      <View style={[styles.notificationIcon, { backgroundColor: typeInfo.color + '20' }]}>
+                        <Ionicons name={typeInfo.icon as any} size={20} color={typeInfo.color} />
+                      </View>
+                      <View style={styles.notificationInfo}>
+                        <View style={styles.notificationHeader}>
+                          <Text style={[
+                            styles.notificationTitle,
+                            !notification.isRead && styles.notificationTitleUnread
+                          ]}>
+                            {notification.title}
+                          </Text>
+                          {!notification.isRead && <View style={styles.unreadDot} />}
+                        </View>
+                        <Text style={styles.notificationMessage}>{notification.message}</Text>
+                        <Text style={styles.notificationTime}>{notification.time}</Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </>
+          )}
         </View>
 
         {/* Empty State (if no notifications) */}
-        {notifications.length === 0 && (
+        {filteredNotifications.length === 0 && (
           <View style={styles.emptyState}>
             <Ionicons name="notifications-off-outline" size={64} color="#ccc" />
             <Text style={styles.emptyTitle}>No Notifications</Text>
@@ -312,6 +458,15 @@ const styles = StyleSheet.create({
   notificationsContainer: {
     paddingHorizontal: 20,
     marginBottom: 24,
+  },
+  groupHeader: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#555",
+    textTransform: "uppercase",
+    marginBottom: 8,
+    marginTop: 8,
+    letterSpacing: 0.8,
   },
   notificationCard: {
     backgroundColor: "rgba(255, 255, 255, 0.95)",
