@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "#333",
+    borderColor: "#fff",
   },
   createAccountText: {
     color: "#333",

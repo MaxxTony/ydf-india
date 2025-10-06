@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TextStyle, TouchableOpacity, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, Text, TextStyle, TouchableOpacity, ViewStyle } from 'react-native';
 
 interface ButtonProps {
   title?: string;
@@ -7,8 +7,8 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   variant?: 'primary' | 'secondary' | 'social';
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   activeOpacity?: number;
   children?: React.ReactNode;
 }
@@ -24,24 +24,18 @@ export default function Button({
   activeOpacity = 0.8,
   children,
 }: ButtonProps) {
-  const getButtonStyle = () => {
-    const baseStyle = [styles.button, styles[variant]];
-    if (disabled || loading) {
-      baseStyle.push(styles.disabled);
-    }
-    if (style) {
-      baseStyle.push(style);
-    }
-    return baseStyle;
-  };
+  const getButtonStyle = (): StyleProp<ViewStyle> => [
+    styles.button,
+    styles[variant],
+    (disabled || loading) && styles.disabled,
+    style,
+  ];
 
-  const getTextStyle = () => {
-    const baseTextStyle = [styles.text, styles[`${variant}Text`]];
-    if (textStyle) {
-      baseTextStyle.push(textStyle);
-    }
-    return baseTextStyle;
-  };
+  const getTextStyle = (): StyleProp<TextStyle> => [
+    styles.text,
+    styles[`${variant}Text`],
+    textStyle,
+  ];
 
   return (
     <TouchableOpacity
