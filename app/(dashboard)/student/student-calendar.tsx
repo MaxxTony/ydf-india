@@ -1,9 +1,23 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
+import { Calendar } from "react-native-calendars";
+import AppHeader from "../../../components/AppHeader";
 
-const calendarEvents = [
+const initialEvents = [
   {
     id: 1,
     title: "Merit Scholarship Deadline",
@@ -89,73 +103,240 @@ const eventTypes = {
 };
 
 export default function CalendarScreen() {
+  const [events, setEvents] = useState(initialEvents);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [reminderTitle, setReminderTitle] = useState("");
+  const [reminderType, setReminderType] = useState<keyof typeof eventTypes>("personal");
+  const [datePickerVisible, setDatePickerVisible] = useState<"date" | "time" | null>(null);
+  const [reminderDate, setReminderDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [deviceCalendarId, setDeviceCalendarId] = useState<string | null>(null);
+  const [deviceEvents, setDeviceEvents] = useState<any[]>([]);
+  const [isConnectingCalendar, setIsConnectingCalendar] = useState(false);
+  const [calendarModule, setCalendarModule] = useState<any>(null);
+  const [addToDeviceCalendar, setAddToDeviceCalendar] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const savedPush = await AsyncStorage.getItem("pushRemindersEnabled");
+      if (savedPush != null) setPushEnabled(savedPush === "true");
+      const savedCustom = await AsyncStorage.getItem("customReminders");
+      if (savedCustom) {
+        const parsed = JSON.parse(savedCustom);
+        if (Array.isArray(parsed)) setEvents([...initialEvents, ...parsed]);
+      }
+      const savedDeviceCalendarId = await AsyncStorage.getItem("deviceCalendarId");
+      if (savedDeviceCalendarId) {
+        setDeviceCalendarId(savedDeviceCalendarId);
+      }
+    })();
+  }, []);
+
+  const onTogglePush = async (value: boolean) => {
+    setPushEnabled(value);
+    await AsyncStorage.setItem("pushRemindersEnabled", String(value));
+  };
+
+  const saveCustomReminder = async () => {
+    if (!reminderTitle.trim()) return;
+    const dateIso = reminderDate.toISOString().slice(0, 10);
+    const timeStr = reminderDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const newItem = {
+      id: Date.now(),
+      title: reminderTitle.trim(),
+      date: dateIso,
+      time: timeStr,
+      type: reminderType,
+      priority: "low",
+      color: eventTypes[reminderType].color,
+      description: "Custom reminder"
+    } as any;
+
+    const existingRaw = await AsyncStorage.getItem("customReminders");
+    const existing = existingRaw ? JSON.parse(existingRaw) : [];
+    const updated = [...existing, newItem];
+    await AsyncStorage.setItem("customReminders", JSON.stringify(updated));
+    setEvents(prev => [...prev, newItem]);
+    // Optionally add to device calendar
+    try {
+      if (addToDeviceCalendar && deviceCalendarId) {
+        const CalendarMod = await ensureCalendarModule();
+        const startDate = new Date(reminderDate);
+        const endDate = new Date(reminderDate.getTime() + 30 * 60 * 1000);
+        await CalendarMod.createEventAsync(deviceCalendarId, {
+          title: newItem.title,
+          startDate,
+          endDate,
+          notes: newItem.description,
+        });
+        if (selectedDate === dateIso) {
+          await fetchDeviceEventsForDate(selectedDate);
+        }
+      }
+    } catch {}
+    setShowReminderModal(false);
+    setReminderTitle("");
+    setReminderType("personal");
+    setAddToDeviceCalendar(false);
+  };
+
+  const eventsOnDay = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const e of events) {
+      map[e.date] = (map[e.date] || 0) + 1;
+    }
+    return map;
+  }, [events]);
+
+  const todayIso = new Date().toISOString().slice(0, 10);
+
+  const markedDates = useMemo(() => {
+    const grouped: Record<string, { dots: { color: string }[] }> = {};
+    for (const e of events) {
+      if (!grouped[e.date]) grouped[e.date] = { dots: [] };
+      const color = (eventTypes as any)[e.type]?.color || "#4CAF50";
+      if (!grouped[e.date].dots.find(d => d.color === color)) grouped[e.date].dots.push({ color });
+    }
+    const marks: Record<string, any> = {};
+    for (const [date, { dots }] of Object.entries(grouped)) {
+      marks[date] = {
+        marked: true,
+        dots,
+        selected: date === selectedDate,
+        selectedColor: "#4CAF50"
+      };
+    }
+    // Ensure selected date is highlighted even if no events
+    if (!marks[selectedDate]) {
+      marks[selectedDate] = { selected: true, selectedColor: "#4CAF50" };
+    }
+    return marks;
+  }, [events, selectedDate]);
+
+  useEffect(() => {
+    // If connected, refresh device events when date changes
+    if (deviceCalendarId) {
+      fetchDeviceEventsForDate(selectedDate).catch(() => {});
+    }
+  }, [selectedDate, deviceCalendarId]);
+
+  const ensureCalendarModule = async () => {
+    if (calendarModule) return calendarModule;
+    const mod = await import("expo-calendar");
+    setCalendarModule(mod);
+    return mod;
+  };
+
+  const connectDeviceCalendar = async () => {
+    try {
+      setIsConnectingCalendar(true);
+      const CalendarMod = await ensureCalendarModule();
+      const perm = await CalendarMod.requestCalendarPermissionsAsync();
+      if (perm.status !== "granted") {
+        setIsConnectingCalendar(false);
+        return;
+      }
+      // Try default calendar, fallback to first event calendar
+      let defaultCal: any = null;
+      try {
+        defaultCal = await CalendarMod.getDefaultCalendarAsync();
+      } catch {}
+      if (!defaultCal) {
+        const cals = await CalendarMod.getCalendarsAsync(CalendarMod.EntityTypes.EVENT);
+        defaultCal = cals.find((c: any) => c.allowsModifications) || cals[0] || null;
+      }
+      if (!defaultCal) {
+        setIsConnectingCalendar(false);
+        return;
+      }
+      setDeviceCalendarId(defaultCal.id);
+      await AsyncStorage.setItem("deviceCalendarId", String(defaultCal.id));
+      await fetchDeviceEventsForDate(selectedDate);
+    } finally {
+      setIsConnectingCalendar(false);
+    }
+  };
+
+  const fetchDeviceEventsForDate = async (dateIso: string) => {
+    const CalendarMod = await ensureCalendarModule();
+    if (!deviceCalendarId) return;
+    const start = new Date(dateIso + "T00:00:00.000");
+    const end = new Date(dateIso + "T23:59:59.999");
+    const list = await CalendarMod.getEventsAsync([deviceCalendarId], start, end);
+    setDeviceEvents(list || []);
+  };
+
+  // Agenda view removed
+
   return (
     <View style={styles.container}>
-      {/* Gradient Background */}
       <LinearGradient
         colors={["#fff", "#fff", "#f2c44d"]}
         style={styles.background}
         locations={[0, 0.3, 1]}
       />
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Calendar & Reminders</Text>
-          <TouchableOpacity style={styles.addButton}>
+      <AppHeader
+        title="Calendar & Reminders"
+        onBack={() => router.back()}
+        rightIcon={
+          <TouchableOpacity onPress={() => setShowReminderModal(true)} style={styles.addButton}>
             <Ionicons name="add" size={24} color="#4CAF50" />
           </TouchableOpacity>
+        }
+      />
+
+      <ScrollView style={styles.scrollView} contentContainerStyle={{paddingVertical:20}} showsVerticalScrollIndicator={false}>
+        {/* Legend */}
+        <View style={styles.legendContainer}>
+          {Object.entries(eventTypes).map(([key, meta]) => (
+            <View key={key} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: meta.color }]} />
+              <Text style={styles.legendText}>{key.charAt(0).toUpperCase() + key.slice(1)}</Text>
+            </View>
+          ))}
         </View>
 
-        {/* Current Month Header */}
-        <View style={styles.monthHeader}>
-          <TouchableOpacity style={styles.monthButton}>
-            <Ionicons name="chevron-back" size={20} color="#666" />
-          </TouchableOpacity>
-          <Text style={styles.monthText}>March 2024</Text>
-          <TouchableOpacity style={styles.monthButton}>
-            <Ionicons name="chevron-forward" size={20} color="#666" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Calendar Grid */}
         <View style={styles.calendarContainer}>
-          <View style={styles.calendarHeader}>
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-              <Text key={day} style={styles.calendarDayHeader}>{day}</Text>
-            ))}
+          <Calendar
+            markingType="multi-dot"
+            markedDates={markedDates}
+            onDayPress={(day: any) => setSelectedDate(day.dateString)}
+            initialDate={selectedDate}
+            enableSwipeMonths
+            theme={{
+              todayTextColor: "#4CAF50",
+              selectedDayBackgroundColor: "#4CAF50",
+              selectedDayTextColor: "#fff",
+              arrowColor: "#666",
+              monthTextColor: "#333",
+              textSectionTitleColor: "#666",
+            }}
+          />
+        </View>
+
+        {/* Push Reminder Toggle */}
+        <View style={styles.settingsCard}>
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.switchTitle}>Push Reminders</Text>
+              <Text style={styles.switchSubtitle}>Get notified before deadlines and events</Text>
+            </View>
+            <Switch value={pushEnabled} onValueChange={onTogglePush} trackColor={{ false: '#ccc', true: '#4CAF50' }} />
           </View>
-          <View style={styles.calendarGrid}>
-            {Array.from({ length: 35 }, (_, i) => {
-              const day = i - 6; // Start from previous month
-              const isCurrentMonth = day > 0 && day <= 31;
-              const isToday = day === 15; // Mock today
-              const hasEvent = [10, 12, 15, 18, 20, 25].includes(day);
-              
-              return (
-                <TouchableOpacity
-                  key={i}
-                  style={[
-                    styles.calendarDay,
-                    isToday && styles.calendarDayToday,
-                    hasEvent && styles.calendarDayWithEvent
-                  ]}
-                >
-                  <Text style={[
-                    styles.calendarDayText,
-                    !isCurrentMonth && styles.calendarDayTextInactive,
-                    isToday && styles.calendarDayTextToday
-                  ]}>
-                    {day > 0 ? day : ''}
-                  </Text>
-                  {hasEvent && <View style={styles.eventDot} />}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+
+            <View style={styles.switchRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.switchTitle}>Add to device calendar</Text>
+                <Text style={styles.switchSubtitle}>Creates a device event if connected</Text>
+              </View>
+              <Switch value={addToDeviceCalendar} onValueChange={setAddToDeviceCalendar} trackColor={{ false: '#ccc', true: '#4CAF50' }} />
+            </View>
+            {!deviceCalendarId && addToDeviceCalendar && (
+              <Text style={[styles.switchHint, { marginTop: 6 }]}>Connect your device calendar below first.</Text>
+            )}
+          <Text style={styles.switchHint}>To enable actual push notifications, install and configure `expo-notifications`.</Text>
         </View>
 
         {/* Upcoming Deadlines */}
@@ -178,10 +359,13 @@ export default function CalendarScreen() {
           ))}
         </View>
 
-        {/* Today's Events */}
+        {/* Selected Day Events */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today's Events</Text>
-          {calendarEvents.filter(event => event.date === "2024-03-15").map((event) => {
+          <Text style={styles.sectionTitle}>Events on {selectedDate}</Text>
+          {events.filter(e => e.date === selectedDate).length === 0 && (
+            <Text style={{ color: '#666' }}>No reminders on this date.</Text>
+          )}
+          {events.filter(e => e.date === selectedDate).map((event) => {
             const typeInfo = eventTypes[event.type as keyof typeof eventTypes];
             return (
               <View key={event.id} style={styles.eventCard}>
@@ -199,10 +383,49 @@ export default function CalendarScreen() {
           })}
         </View>
 
+        {/* Device Schedule (Expo Calendar) */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Device Schedule</Text>
+          {!deviceCalendarId ? (
+            <View style={styles.settingsCard}>
+              <Text style={styles.switchSubtitle}>Connect your device calendar to see events for {selectedDate}.</Text>
+              <TouchableOpacity onPress={connectDeviceCalendar} style={[styles.primaryBtn, { marginTop: 12, opacity: isConnectingCalendar ? 0.7 : 1 }]} disabled={isConnectingCalendar}>
+                <Ionicons name="calendar-outline" size={18} color="#fff" />
+                <Text style={styles.primaryBtnText}>{isConnectingCalendar ? 'Connecting…' : 'Connect Device Calendar'}</Text>
+              </TouchableOpacity>
+              <Text style={styles.switchHint}>
+                This uses Expo Calendar. If not installed, run: yarn add expo-calendar
+              </Text>
+            </View>
+          ) : (
+            <>
+              {deviceEvents.length === 0 ? (
+                <Text style={{ color: '#666' }}>No device events on this date.</Text>
+              ) : (
+                deviceEvents.map((evt: any) => (
+                  <View key={evt.id} style={styles.eventCard}>
+                    <View style={[styles.eventIcon, { backgroundColor: '#33333320' }]}>
+                      <Ionicons name="calendar" size={20} color="#333" />
+                    </View>
+                    <View style={styles.eventInfo}>
+                      <Text style={styles.eventTitle}>{evt.title || 'Untitled Event'}</Text>
+                      <Text style={styles.eventDescription}>
+                        {evt.startDate ? new Date(evt.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                        {evt.endDate ? ` - ${new Date(evt.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
+                      </Text>
+                      {!!evt.location && <Text style={styles.eventTime}>{evt.location}</Text>}
+                    </View>
+                  </View>
+                ))
+              )}
+            </>
+          )}
+        </View>
+
         {/* This Week's Events */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>This Week's Events</Text>
-          {calendarEvents.map((event) => {
+          {events.map((event) => {
             const typeInfo = eventTypes[event.type as keyof typeof eventTypes];
             return (
               <TouchableOpacity key={event.id} style={styles.eventCard}>
@@ -220,29 +443,86 @@ export default function CalendarScreen() {
           })}
         </View>
 
-        {/* Quick Actions */}
+        {/* Optional Device Calendar CTA */}
         <View style={styles.quickActionsContainer}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActionsGrid}>
-            <TouchableOpacity style={styles.quickActionCard}>
+            <TouchableOpacity style={styles.quickActionCard} onPress={() => setShowReminderModal(true)}>
               <Ionicons name="add-circle-outline" size={24} color="#4CAF50" />
               <Text style={styles.quickActionText}>Add Reminder</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionCard}>
+            <View style={styles.quickActionCard}>
               <Ionicons name="calendar-outline" size={24} color="#2196F3" />
-              <Text style={styles.quickActionText}>View Full Calendar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionCard}>
-              <Ionicons name="notifications-outline" size={24} color="#FF9800" />
-              <Text style={styles.quickActionText}>Notification Settings</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionCard}>
-              <Ionicons name="sync-outline" size={24} color="#9C27B0" />
-              <Text style={styles.quickActionText}>Sync Calendar</Text>
-            </TouchableOpacity>
+              <Text style={styles.quickActionText}>Integrate Device Calendar</Text>
+              <Text style={styles.quickActionHint}>Install `expo-calendar` to sync events</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
+
+      {/* Add Reminder Modal */}
+      <Modal visible={showReminderModal} animationType="slide" transparent>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={styles.modalTitle}>Add Custom Reminder</Text>
+              <TouchableOpacity onPress={() => setShowReminderModal(false)} style={{ padding: 8 }}>
+                <Ionicons name="close" size={22} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              placeholder="Title"
+              value={reminderTitle}
+              onChangeText={setReminderTitle}
+              style={styles.input}
+              placeholderTextColor="#999"
+            />
+            <View style={styles.typeRow}>
+              {Object.keys(eventTypes).map((k) => (
+                <TouchableOpacity
+                  key={k}
+                  onPress={() => setReminderType(k as keyof typeof eventTypes)}
+                  style={[
+                    styles.typeChip,
+                    reminderType === k && { backgroundColor: (eventTypes as any)[k].color + '20', borderColor: (eventTypes as any)[k].color }
+                  ]}
+                >
+                  <Ionicons name={(eventTypes as any)[k].icon} size={14} color={(eventTypes as any)[k].color} />
+                  <Text style={styles.typeChipText}>{k}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={styles.dateTimeRow}>
+              <TouchableOpacity onPress={() => setDatePickerVisible('date')} style={styles.dateBtn}>
+                <Ionicons name="calendar" size={16} color="#333" />
+                <Text style={styles.dateBtnText}>{reminderDate.toDateString()}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setDatePickerVisible('time')} style={styles.dateBtn}>
+                <Ionicons name="time" size={16} color="#333" />
+                <Text style={styles.dateBtnText}>
+                  {reminderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {datePickerVisible && (
+              <DateTimePicker
+                value={reminderDate}
+                mode={datePickerVisible}
+                onChange={(_, selected) => {
+                  if (selected) setReminderDate(selected);
+                  setDatePickerVisible(null);
+                }}
+              />
+            )}
+
+            <TouchableOpacity onPress={saveCustomReminder} style={styles.primaryBtn}>
+              <Ionicons name="save-outline" size={18} color="#fff" />
+              <Text style={styles.primaryBtnText}>Save Reminder</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -261,22 +541,6 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#333",
   },
   addButton: {
     padding: 8,
@@ -469,6 +733,158 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: "center",
     fontWeight: "500",
+  },
+  quickActionHint: {
+    fontSize: 10,
+    color: "#666",
+    marginTop: 6,
+    textAlign: "center",
+  },
+  legendContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: "rgba(51, 51, 51, 0.08)",
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  legendText: {
+    fontSize: 12,
+    color: "#333",
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  settingsCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "rgba(51, 51, 51, 0.1)",
+  },
+  switchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  switchTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
+  },
+  switchSubtitle: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 2,
+  },
+  switchHint: {
+    fontSize: 11,
+    color: "#999",
+    marginTop: 10,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.2)",
+    justifyContent: "flex-end",
+  },
+  modalCard: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#eee",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 12,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#e5e5e5",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    color: "#333",
+    marginBottom: 12,
+    backgroundColor: "#fafafa",
+  },
+  typeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
+  typeChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    backgroundColor: "#fff",
+  },
+  typeChipText: {
+    fontSize: 12,
+    color: "#333",
+    textTransform: "capitalize",
+    fontWeight: "600",
+  },
+  dateTimeRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 16,
+  },
+  dateBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e5e5e5",
+    backgroundColor: "#fafafa",
+  },
+  dateBtnText: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "600",
+  },
+  primaryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: "#4CAF50",
+  },
+  primaryBtnText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });
 

@@ -13,7 +13,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 // Types
@@ -41,7 +41,7 @@ const INITIAL_DOCUMENTS: Document[] = [
     type: "PDF",
     size: "2.3 MB",
     uploadDate: "2024-02-15",
-    status: "verified"
+    status: "verified",
   },
   {
     id: 2,
@@ -49,7 +49,7 @@ const INITIAL_DOCUMENTS: Document[] = [
     type: "PDF",
     size: "1.8 MB",
     uploadDate: "2024-02-16",
-    status: "pending"
+    status: "pending",
   },
   {
     id: 3,
@@ -57,7 +57,7 @@ const INITIAL_DOCUMENTS: Document[] = [
     type: "PDF",
     size: "1.2 MB",
     uploadDate: "2024-02-18",
-    status: "verified"
+    status: "verified",
   },
   {
     id: 4,
@@ -65,57 +65,59 @@ const INITIAL_DOCUMENTS: Document[] = [
     type: "PDF",
     size: "456 KB",
     uploadDate: "2024-02-20",
-    status: "verified"
-  }
+    status: "verified",
+  },
 ];
 
 export default function StudentProfileScreen() {
   // Tab State
   const [activeTab, setActiveTab] = useState<TabType>("personal");
-  
+
   // Personal Information State
   const [personalInfo, setPersonalInfo] = useState({
     fullName: "John Doe",
     email: "john.doe@university.edu",
     phone: "+1 (555) 123-4567",
     dob: "01/15/2000",
-    address: "123 University Ave, City, State 12345"
+    address: "123 University Ave, City, State 12345",
   });
-  
+
   // Academic Information State
   const [academicInfo, setAcademicInfo] = useState({
     institution: "University of Technology",
     major: "Computer Science",
     gpa: "3.75",
     graduation: "May 2024",
-    year: "Senior"
+    year: "Senior",
   });
-  
+
   // Settings State
   const [settings, setSettings] = useState({
     pushEnabled: true,
     emailEnabled: true,
     darkMode: false,
-    language: "en" as LanguageCode
+    language: "en" as LanguageCode,
   });
-  
+
   // Password State
   const [passwordData, setPasswordData] = useState({
     oldPassword: "",
     newPassword: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
-  
+
   // Documents State
   const [documents, setDocuments] = useState<Document[]>(INITIAL_DOCUMENTS);
-  
+
   // UI State
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
+    {}
+  );
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Animation
@@ -146,48 +148,53 @@ export default function StudentProfileScreen() {
   };
 
   const validatePassword = (password: string): boolean => {
-    return password.length >= 8 && 
-           /[A-Z]/.test(password) && 
-           /[a-z]/.test(password) && 
-           /\d/.test(password);
+    return (
+      password.length >= 8 &&
+      /[A-Z]/.test(password) &&
+      /[a-z]/.test(password) &&
+      /\d/.test(password)
+    );
   };
 
   // Personal Info Handlers
-  const handlePersonalInfoChange = useCallback((field: keyof typeof personalInfo, value: string) => {
-    setPersonalInfo(prev => ({ ...prev, [field]: value }));
-    setHasUnsavedChanges(true);
-    
-    // Clear validation error for this field
-    if (validationErrors[field]) {
-      setValidationErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  }, [validationErrors]);
+  const handlePersonalInfoChange = useCallback(
+    (field: keyof typeof personalInfo, value: string) => {
+      setPersonalInfo((prev) => ({ ...prev, [field]: value }));
+      setHasUnsavedChanges(true);
+
+      // Clear validation error for this field
+      if (validationErrors[field]) {
+        setValidationErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+    },
+    [validationErrors]
+  );
 
   const validatePersonalInfo = (): boolean => {
     const errors: ValidationErrors = {};
-    
+
     if (!personalInfo.fullName.trim()) {
       errors.fullName = "Full name is required";
     } else if (personalInfo.fullName.trim().length < 2) {
       errors.fullName = "Name must be at least 2 characters";
     }
-    
+
     if (!validateEmail(personalInfo.email)) {
       errors.email = "Please enter a valid email address";
     }
-    
+
     if (!validatePhone(personalInfo.phone)) {
       errors.phone = "Please enter a valid phone number";
     }
-    
+
     if (!personalInfo.address.trim()) {
       errors.address = "Address is required";
     }
-    
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -197,13 +204,13 @@ export default function StudentProfileScreen() {
       Alert.alert("Validation Error", "Please fix the errors before saving");
       return;
     }
-    
+
     setIsSaving(true);
-    
+
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       setHasUnsavedChanges(false);
       Alert.alert("Success", "Personal information updated successfully");
     } catch (error) {
@@ -214,38 +221,41 @@ export default function StudentProfileScreen() {
   };
 
   // Academic Info Handlers
-  const handleAcademicInfoChange = useCallback((field: keyof typeof academicInfo, value: string) => {
-    setAcademicInfo(prev => ({ ...prev, [field]: value }));
-    setHasUnsavedChanges(true);
-    
-    if (validationErrors[field]) {
-      setValidationErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  }, [validationErrors]);
+  const handleAcademicInfoChange = useCallback(
+    (field: keyof typeof academicInfo, value: string) => {
+      setAcademicInfo((prev) => ({ ...prev, [field]: value }));
+      setHasUnsavedChanges(true);
+
+      if (validationErrors[field]) {
+        setValidationErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+    },
+    [validationErrors]
+  );
 
   const validateAcademicInfo = (): boolean => {
     const errors: ValidationErrors = {};
-    
+
     if (!academicInfo.institution.trim()) {
       errors.institution = "Institution name is required";
     }
-    
+
     if (!academicInfo.major.trim()) {
       errors.major = "Major/Field of study is required";
     }
-    
+
     if (!validateGPA(academicInfo.gpa)) {
       errors.gpa = "GPA must be between 0.0 and 4.0";
     }
-    
+
     if (!academicInfo.year.trim()) {
       errors.year = "Academic year is required";
     }
-    
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -255,12 +265,12 @@ export default function StudentProfileScreen() {
       Alert.alert("Validation Error", "Please fix the errors before saving");
       return;
     }
-    
+
     setIsSaving(true);
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       setHasUnsavedChanges(false);
       Alert.alert("Success", "Academic information updated successfully");
     } catch (error) {
@@ -273,34 +283,35 @@ export default function StudentProfileScreen() {
   // Password Change Handler
   const handleChangePassword = async () => {
     const errors: ValidationErrors = {};
-    
+
     if (!passwordData.oldPassword) {
       errors.oldPassword = "Current password is required";
     }
-    
+
     if (!validatePassword(passwordData.newPassword)) {
-      errors.newPassword = "Password must be at least 8 characters with uppercase, lowercase, and number";
+      errors.newPassword =
+        "Password must be at least 8 characters with uppercase, lowercase, and number";
     }
-    
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       errors.confirmPassword = "Passwords do not match";
     }
-    
+
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       Alert.alert("Validation Error", Object.values(errors)[0]);
       return;
     }
-    
+
     setIsSaving(true);
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       setPasswordData({
         oldPassword: "",
         newPassword: "",
-        confirmPassword: ""
+        confirmPassword: "",
       });
       setValidationErrors({});
       Alert.alert("Success", "Password changed successfully");
@@ -313,16 +324,12 @@ export default function StudentProfileScreen() {
 
   // Document Handlers
   const handleUploadDocument = () => {
-    Alert.alert(
-      "Upload Document",
-      "Select document source",
-      [
-        { text: "Camera", onPress: () => console.log("Camera selected") },
-        { text: "Gallery", onPress: () => console.log("Gallery selected") },
-        { text: "Files", onPress: () => console.log("Files selected") },
-        { text: "Cancel", style: "cancel" }
-      ]
-    );
+    Alert.alert("Upload Document", "Select document source", [
+      { text: "Camera", onPress: () => console.log("Camera selected") },
+      { text: "Gallery", onPress: () => console.log("Gallery selected") },
+      { text: "Files", onPress: () => console.log("Files selected") },
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
 
   const handleViewDocument = (docId: number) => {
@@ -342,7 +349,7 @@ export default function StudentProfileScreen() {
 
   const confirmDeleteDocument = () => {
     if (selectedDocument) {
-      setDocuments(prev => prev.filter(doc => doc.id !== selectedDocument));
+      setDocuments((prev) => prev.filter((doc) => doc.id !== selectedDocument));
       setShowDeleteModal(false);
       setSelectedDocument(null);
       Alert.alert("Success", "Document deleted successfully");
@@ -351,12 +358,17 @@ export default function StudentProfileScreen() {
 
   // Settings Handlers
   const toggleSetting = useCallback((key: keyof typeof settings) => {
-    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
   const handleLanguageChange = useCallback((lang: LanguageCode) => {
-    setSettings(prev => ({ ...prev, language: lang }));
-    Alert.alert("Language Changed", `Language set to ${lang === "en" ? "English" : lang === "fr" ? "Français" : "العربية"}`);
+    setSettings((prev) => ({ ...prev, language: lang }));
+    Alert.alert(
+      "Language Changed",
+      `Language set to ${
+        lang === "en" ? "English" : lang === "fr" ? "Français" : "العربية"
+      }`
+    );
   }, []);
 
   // Logout Handler
@@ -369,74 +381,90 @@ export default function StudentProfileScreen() {
   };
 
   // Tab Change Handler
-  const handleTabChange = useCallback((tab: TabType) => {
-    if (hasUnsavedChanges) {
-      Alert.alert(
-        "Unsaved Changes",
-        "You have unsaved changes. Do you want to discard them?",
-        [
-          { text: "Cancel", style: "cancel" },
-          { 
-            text: "Discard", 
-            style: "destructive",
-            onPress: () => {
-              setHasUnsavedChanges(false);
-              setActiveTab(tab);
-              setValidationErrors({});
-            }
-          }
-        ]
-      );
-    } else {
-      setActiveTab(tab);
-      setValidationErrors({});
-    }
-  }, [hasUnsavedChanges]);
+  const handleTabChange = useCallback(
+    (tab: TabType) => {
+      if (hasUnsavedChanges) {
+        Alert.alert(
+          "Unsaved Changes",
+          "You have unsaved changes. Do you want to discard them?",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Discard",
+              style: "destructive",
+              onPress: () => {
+                setHasUnsavedChanges(false);
+                setActiveTab(tab);
+                setValidationErrors({});
+              },
+            },
+          ]
+        );
+      } else {
+        setActiveTab(tab);
+        setValidationErrors({});
+      }
+    },
+    [hasUnsavedChanges]
+  );
 
   // Profile Header Component
-  const profileHeader = useMemo(() => (
-    <View style={styles.profileSection}>
-      <View style={styles.profileCard}>
-        <View style={styles.profileImageContainer}>
-          <Image
-            source={{ uri: "https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=200&q=60" }}
-            style={styles.profileImage}
-          />
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.3)']}
-            style={styles.imageOverlay}
-          />
-          <TouchableOpacity style={styles.cameraButton}>
-            <Ionicons name="camera" size={18} color="#fff" />
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.profileName}>{personalInfo.fullName}</Text>
-        <Text style={styles.profileEmail}>{personalInfo.email}</Text>
-        <View style={styles.studentIdBadge}>
-          <Ionicons name="card-outline" size={14} color="#666" />
-          <Text style={styles.profileStudentId}>ID: 12345678</Text>
-        </View>
-        
-        {/* Quick Stats */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{academicInfo.gpa}</Text>
-            <Text style={styles.statLabel}>GPA</Text>
+  const profileHeader = useMemo(
+    () => (
+      <View style={styles.profileSection}>
+        <View style={styles.profileCard}>
+          <View style={styles.profileImageContainer}>
+            <Image
+              source={{
+                uri: "https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=200&q=60",
+              }}
+              style={styles.profileImage}
+            />
+            <LinearGradient
+              colors={["transparent", "rgba(0,0,0,0.3)"]}
+              style={styles.imageOverlay}
+            />
+            <TouchableOpacity style={styles.cameraButton}>
+              <Ionicons name="camera" size={18} color="#fff" />
+            </TouchableOpacity>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{documents.filter(d => d.status === "verified").length}</Text>
-            <Text style={styles.statLabel}>Verified Docs</Text>
+          <Text style={styles.profileName}>{personalInfo.fullName}</Text>
+          <Text style={styles.profileEmail}>{personalInfo.email}</Text>
+          <View style={styles.studentIdBadge}>
+            <Ionicons name="card-outline" size={14} color="#666" />
+            <Text style={styles.profileStudentId}>ID: 12345678</Text>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{academicInfo.year}</Text>
-            <Text style={styles.statLabel}>Year</Text>
+
+          {/* Quick Stats */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{academicInfo.gpa}</Text>
+              <Text style={styles.statLabel}>GPA</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>
+                {documents.filter((d) => d.status === "verified").length}
+              </Text>
+              <Text style={styles.statLabel}>Verified Docs</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{academicInfo.year}</Text>
+              <Text style={styles.statLabel}>Year</Text>
+            </View>
           </View>
         </View>
       </View>
-    </View>
-  ), [personalInfo.fullName, personalInfo.email, academicInfo.gpa, academicInfo.year, documents]);
+    ),
+    [
+      personalInfo.fullName,
+      personalInfo.email,
+      academicInfo.gpa,
+      academicInfo.year,
+      documents,
+    ]
+  );
 
   // Tab Button Component
   const TabButton = ({
@@ -455,12 +483,10 @@ export default function StudentProfileScreen() {
         style={[styles.tabButton, isActive && styles.tabButtonActive]}
         activeOpacity={0.8}
       >
-        <Ionicons
-          name={icon}
-          size={18}
-          color={isActive ? "#fff" : "#666"}
-        />
-        <Text style={[styles.tabButtonText, isActive && styles.tabButtonTextActive]}>
+        <Ionicons name={icon} size={18} color={isActive ? "#fff" : "#666"} />
+        <Text
+          style={[styles.tabButtonText, isActive && styles.tabButtonTextActive]}
+        >
           {label}
         </Text>
         {hasUnsavedChanges && isActive && (
@@ -489,13 +515,24 @@ export default function StudentProfileScreen() {
         >
           <TabButton tab="personal" label="Personal" icon="person-outline" />
           <TabButton tab="academic" label="Academic" icon="school-outline" />
-          <TabButton tab="documents" label="Documents" icon="documents-outline" />
+          <TabButton
+            tab="documents"
+            label="Documents"
+            icon="documents-outline"
+          />
           <TabButton tab="settings" label="Settings" icon="settings-outline" />
-          <TabButton tab="about" label="About" icon="information-circle-outline" />
+          <TabButton
+            tab="about"
+            label="About"
+            icon="information-circle-outline"
+          />
         </ScrollView>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {profileHeader}
 
         <Animated.View style={{ opacity: fadeAnim }}>
@@ -510,59 +547,90 @@ export default function StudentProfileScreen() {
                 )}
               </View>
               <View style={styles.formCard}>
-                <CustomTextInput 
-                  label="Full Name" 
-                  value={personalInfo.fullName} 
-                  onChangeText={(val) => handlePersonalInfoChange("fullName", val)}
+                <CustomTextInput
+                  label="Full Name"
+                  value={personalInfo.fullName}
+                  onChangeText={(val) =>
+                    handlePersonalInfoChange("fullName", val)
+                  }
                   style={styles.input}
                   error={validationErrors.newPassword}
                   placeholder="Min 8 chars, 1 uppercase, 1 number"
                 />
-                <CustomTextInput 
-                  label="Confirm Password" 
-                  value={passwordData.confirmPassword} 
-                  onChangeText={(val) => setPasswordData(prev => ({ ...prev, confirmPassword: val }))}
-                  secureTextEntry 
-                  showPasswordToggle 
+                <CustomTextInput
+                  label="Confirm Password"
+                  value={passwordData.confirmPassword}
+                  onChangeText={(val) =>
+                    setPasswordData((prev) => ({
+                      ...prev,
+                      confirmPassword: val,
+                    }))
+                  }
+                  secureTextEntry
+                  showPasswordToggle
                   style={styles.input}
                   error={validationErrors.confirmPassword}
                 />
-                <Button 
-                  title={isSaving ? "Updating..." : "Update Password"} 
-                  onPress={handleChangePassword} 
-                  variant="primary" 
+                <Button
+                  title={isSaving ? "Updating..." : "Update Password"}
+                  onPress={handleChangePassword}
+                  variant="primary"
                   style={styles.saveButton}
-                  disabled={isSaving || !passwordData.oldPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                  disabled={
+                    isSaving ||
+                    !passwordData.oldPassword ||
+                    !passwordData.newPassword ||
+                    !passwordData.confirmPassword
+                  }
                 />
               </View>
 
-              <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Language & Region</Text>
+              <Text style={[styles.sectionTitle, { marginTop: 24 }]}>
+                Language & Region
+              </Text>
               <View style={styles.languageCard}>
                 <View style={styles.languageRow}>
-                  {([
-                    { code: "en", label: "English", flag: "🇺🇸" },
-                    { code: "fr", label: "Français", flag: "🇫🇷" },
-                    { code: "ar", label: "العربية", flag: "🇸🇦" },
-                  ] as { code: LanguageCode; label: string; flag: string }[]).map((opt) => (
+                  {(
+                    [
+                      { code: "en", label: "English", flag: "🇺🇸" },
+                      { code: "fr", label: "Français", flag: "🇫🇷" },
+                      { code: "ar", label: "العربية", flag: "🇸🇦" },
+                    ] as { code: LanguageCode; label: string; flag: string }[]
+                  ).map((opt) => (
                     <TouchableOpacity
                       key={opt.code}
                       onPress={() => handleLanguageChange(opt.code)}
-                      style={[styles.langPill, settings.language === opt.code && styles.langPillActive]}
+                      style={[
+                        styles.langPill,
+                        settings.language === opt.code && styles.langPillActive,
+                      ]}
                       activeOpacity={0.7}
                     >
                       <Text style={styles.langFlag}>{opt.flag}</Text>
-                      <Text style={[styles.langPillText, settings.language === opt.code && styles.langPillTextActive]}>
+                      <Text
+                        style={[
+                          styles.langPillText,
+                          settings.language === opt.code &&
+                            styles.langPillTextActive,
+                        ]}
+                      >
                         {opt.label}
                       </Text>
                       {settings.language === opt.code && (
-                        <Ionicons name="checkmark-circle" size={16} color="#fff" />
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={16}
+                          color="#fff"
+                        />
                       )}
                     </TouchableOpacity>
                   ))}
                 </View>
               </View>
 
-              <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Account Actions</Text>
+              <Text style={[styles.sectionTitle, { marginTop: 24 }]}>
+                Account Actions
+              </Text>
               <View style={styles.actionContainer}>
                 <Button
                   title="Logout"
@@ -578,7 +646,7 @@ export default function StudentProfileScreen() {
             </View>
           )}
 
-{activeTab === "academic" && (
+          {activeTab === "academic" && (
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Academic Details</Text>
@@ -589,47 +657,50 @@ export default function StudentProfileScreen() {
                 )}
               </View>
               <View style={styles.formCard}>
-                <CustomTextInput 
-                  label="Institution" 
-                  value={academicInfo.institution} 
-                  onChangeText={(val) => handleAcademicInfoChange("institution", val)}
+                <CustomTextInput
+                  label="Institution"
+                  value={academicInfo.institution}
+                  onChangeText={(val) =>
+                    handleAcademicInfoChange("institution", val)
+                  }
                   style={styles.input}
                   error={validationErrors.institution}
                 />
-                <CustomTextInput 
-                  label="Major/Field of Study" 
-                  value={academicInfo.major} 
+                <CustomTextInput
+                  label="Major/Field of Study"
+                  value={academicInfo.major}
                   onChangeText={(val) => handleAcademicInfoChange("major", val)}
                   style={styles.input}
                   error={validationErrors.major}
                 />
-                <CustomTextInput 
-                  label="Current GPA" 
-                  value={academicInfo.gpa} 
+                <CustomTextInput
+                  label="Current GPA"
+                  value={academicInfo.gpa}
                   onChangeText={(val) => handleAcademicInfoChange("gpa", val)}
-                 
                   style={styles.input}
                   placeholder="0.00 - 4.00"
                   error={validationErrors.gpa}
                 />
-                <CustomTextInput 
-                  label="Expected Graduation" 
-                  value={academicInfo.graduation} 
-                  onChangeText={(val) => handleAcademicInfoChange("graduation", val)}
+                <CustomTextInput
+                  label="Expected Graduation"
+                  value={academicInfo.graduation}
+                  onChangeText={(val) =>
+                    handleAcademicInfoChange("graduation", val)
+                  }
                   style={styles.input}
                   placeholder="e.g., May 2024"
                 />
-                <CustomTextInput 
-                  label="Academic Year" 
-                  value={academicInfo.year} 
+                <CustomTextInput
+                  label="Academic Year"
+                  value={academicInfo.year}
                   onChangeText={(val) => handleAcademicInfoChange("year", val)}
                   style={styles.input}
                   error={validationErrors.year}
                 />
-                <Button 
-                  title={isSaving ? "Saving..." : "Save Academic Info"} 
-                  onPress={handleSaveAcademic} 
-                  variant="primary" 
+                <Button
+                  title={isSaving ? "Saving..." : "Save Academic Info"}
+                  onPress={handleSaveAcademic}
+                  variant="primary"
                   style={styles.saveButton}
                   disabled={isSaving || !hasUnsavedChanges}
                 />
@@ -641,27 +712,46 @@ export default function StudentProfileScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Uploaded Documents</Text>
-                <TouchableOpacity style={styles.uploadButton} onPress={handleUploadDocument}>
+                <TouchableOpacity
+                  style={styles.uploadButton}
+                  onPress={handleUploadDocument}
+                >
                   <Ionicons name="add-circle" size={16} color="#fff" />
                   <Text style={styles.uploadText}>Upload</Text>
                 </TouchableOpacity>
               </View>
-              
+
               {/* Document Stats */}
               <View style={styles.documentStatsRow}>
                 <View style={styles.documentStatCard}>
-                  <Text style={styles.documentStatValue}>{documents.length}</Text>
+                  <Text style={styles.documentStatValue}>
+                    {documents.length}
+                  </Text>
                   <Text style={styles.documentStatLabel}>Total</Text>
                 </View>
-                <View style={[styles.documentStatCard, { backgroundColor: "#4CAF50" + "15" }]}>
-                  <Text style={[styles.documentStatValue, { color: "#4CAF50" }]}>
-                    {documents.filter(d => d.status === "verified").length}
+                <View
+                  style={[
+                    styles.documentStatCard,
+                    { backgroundColor: "#4CAF50" + "15" },
+                  ]}
+                >
+                  <Text
+                    style={[styles.documentStatValue, { color: "#4CAF50" }]}
+                  >
+                    {documents.filter((d) => d.status === "verified").length}
                   </Text>
                   <Text style={styles.documentStatLabel}>Verified</Text>
                 </View>
-                <View style={[styles.documentStatCard, { backgroundColor: "#FF9800" + "15" }]}>
-                  <Text style={[styles.documentStatValue, { color: "#FF9800" }]}>
-                    {documents.filter(d => d.status === "pending").length}
+                <View
+                  style={[
+                    styles.documentStatCard,
+                    { backgroundColor: "#FF9800" + "15" },
+                  ]}
+                >
+                  <Text
+                    style={[styles.documentStatValue, { color: "#FF9800" }]}
+                  >
+                    {documents.filter((d) => d.status === "pending").length}
                   </Text>
                   <Text style={styles.documentStatLabel}>Pending</Text>
                 </View>
@@ -671,18 +761,28 @@ export default function StudentProfileScreen() {
                 {documents.length === 0 ? (
                   <View style={styles.emptyState}>
                     <Ionicons name="document-outline" size={48} color="#ccc" />
-                    <Text style={styles.emptyStateText}>No documents uploaded</Text>
-                    <Text style={styles.emptyStateSubtext}>Upload your first document to get started</Text>
+                    <Text style={styles.emptyStateText}>
+                      No documents uploaded
+                    </Text>
+                    <Text style={styles.emptyStateSubtext}>
+                      Upload your first document to get started
+                    </Text>
                   </View>
                 ) : (
                   documents.map((doc) => (
                     <View key={doc.id} style={styles.documentItem}>
                       <View style={styles.documentIconContainer}>
-                        <Ionicons name="document-text" size={24} color="#2196F3" />
+                        <Ionicons
+                          name="document-text"
+                          size={24}
+                          color="#2196F3"
+                        />
                       </View>
                       <View style={styles.documentInfo}>
                         <View style={styles.documentHeader}>
-                          <Text style={styles.documentName} numberOfLines={1}>{doc.name}</Text>
+                          <Text style={styles.documentName} numberOfLines={1}>
+                            {doc.name}
+                          </Text>
                         </View>
                         <Text style={styles.documentDetails}>
                           {doc.type} • {doc.size} • {doc.uploadDate}
@@ -690,48 +790,84 @@ export default function StudentProfileScreen() {
                         <View
                           style={[
                             styles.statusBadge,
-                            { 
-                              backgroundColor: doc.status === "verified" 
-                                ? "#4CAF50" + "20" 
-                                : doc.status === "pending"
-                                ? "#FF9800" + "20"
-                                : "#F44336" + "20"
+                            {
+                              backgroundColor:
+                                doc.status === "verified"
+                                  ? "#4CAF50" + "20"
+                                  : doc.status === "pending"
+                                  ? "#FF9800" + "20"
+                                  : "#F44336" + "20",
                             },
                           ]}
                         >
-                          <Ionicons 
-                            name={doc.status === "verified" ? "checkmark-circle" : doc.status === "pending" ? "time" : "close-circle"} 
-                            size={12} 
-                            color={doc.status === "verified" ? "#4CAF50" : doc.status === "pending" ? "#FF9800" : "#F44336"}
+                          <Ionicons
+                            name={
+                              doc.status === "verified"
+                                ? "checkmark-circle"
+                                : doc.status === "pending"
+                                ? "time"
+                                : "close-circle"
+                            }
+                            size={12}
+                            color={
+                              doc.status === "verified"
+                                ? "#4CAF50"
+                                : doc.status === "pending"
+                                ? "#FF9800"
+                                : "#F44336"
+                            }
                           />
                           <Text
                             style={[
                               styles.statusText,
-                              { color: doc.status === "verified" ? "#4CAF50" : doc.status === "pending" ? "#FF9800" : "#F44336" },
+                              {
+                                color:
+                                  doc.status === "verified"
+                                    ? "#4CAF50"
+                                    : doc.status === "pending"
+                                    ? "#FF9800"
+                                    : "#F44336",
+                              },
                             ]}
                           >
-                            {doc.status === "verified" ? "Verified" : doc.status === "pending" ? "Pending" : "Rejected"}
+                            {doc.status === "verified"
+                              ? "Verified"
+                              : doc.status === "pending"
+                              ? "Pending"
+                              : "Rejected"}
                           </Text>
                         </View>
                       </View>
                       <View style={styles.documentActions}>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           style={styles.actionButton}
                           onPress={() => handleViewDocument(doc.id)}
                         >
-                          <Ionicons name="eye-outline" size={18} color="#2196F3" />
+                          <Ionicons
+                            name="eye-outline"
+                            size={18}
+                            color="#2196F3"
+                          />
                         </TouchableOpacity>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           style={styles.actionButton}
                           onPress={() => handleDownloadDocument(doc.id)}
                         >
-                          <Ionicons name="download-outline" size={18} color="#666" />
+                          <Ionicons
+                            name="download-outline"
+                            size={18}
+                            color="#666"
+                          />
                         </TouchableOpacity>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           style={styles.actionButton}
                           onPress={() => handleDeleteDocument(doc.id)}
                         >
-                          <Ionicons name="trash-outline" size={18} color="#F44336" />
+                          <Ionicons
+                            name="trash-outline"
+                            size={18}
+                            color="#F44336"
+                          />
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -745,29 +881,47 @@ export default function StudentProfileScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Notifications</Text>
               <View style={styles.settingsCard}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.settingItem}
                   onPress={() => toggleSetting("pushEnabled")}
                   activeOpacity={0.7}
                 >
                   <View style={styles.settingInfo}>
                     <View style={styles.settingIconContainer}>
-                      <Ionicons name="notifications-outline" size={20} color="#4CAF50" />
+                      <Ionicons
+                        name="notifications-outline"
+                        size={20}
+                        color="#4CAF50"
+                      />
                     </View>
                     <View style={styles.settingText}>
-                      <Text style={styles.settingTitle}>Push Notifications</Text>
-                      <Text style={styles.settingDescription}>Receive notifications on your device</Text>
+                      <Text style={styles.settingTitle}>
+                        Push Notifications
+                      </Text>
+                      <Text style={styles.settingDescription}>
+                        Receive notifications on your device
+                      </Text>
                     </View>
                   </View>
                   <TouchableOpacity
                     onPress={() => toggleSetting("pushEnabled")}
-                    style={[styles.toggle, settings.pushEnabled ? styles.toggleActive : styles.toggleInactive]}
+                    style={[
+                      styles.toggle,
+                      settings.pushEnabled
+                        ? styles.toggleActive
+                        : styles.toggleInactive,
+                    ]}
                   >
-                    <View style={[styles.toggleThumb, settings.pushEnabled && styles.toggleThumbActive]} />
+                    <View
+                      style={[
+                        styles.toggleThumb,
+                        settings.pushEnabled && styles.toggleThumbActive,
+                      ]}
+                    />
                   </TouchableOpacity>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.settingItem}
                   onPress={() => toggleSetting("emailEnabled")}
                   activeOpacity={0.7}
@@ -777,19 +931,33 @@ export default function StudentProfileScreen() {
                       <Ionicons name="mail-outline" size={20} color="#2196F3" />
                     </View>
                     <View style={styles.settingText}>
-                      <Text style={styles.settingTitle}>Email Notifications</Text>
-                      <Text style={styles.settingDescription}>Receive updates via email</Text>
+                      <Text style={styles.settingTitle}>
+                        Email Notifications
+                      </Text>
+                      <Text style={styles.settingDescription}>
+                        Receive updates via email
+                      </Text>
                     </View>
                   </View>
                   <TouchableOpacity
                     onPress={() => toggleSetting("emailEnabled")}
-                    style={[styles.toggle, settings.emailEnabled ? styles.toggleActive : styles.toggleInactive]}
+                    style={[
+                      styles.toggle,
+                      settings.emailEnabled
+                        ? styles.toggleActive
+                        : styles.toggleInactive,
+                    ]}
                   >
-                    <View style={[styles.toggleThumb, settings.emailEnabled && styles.toggleThumbActive]} />
+                    <View
+                      style={[
+                        styles.toggleThumb,
+                        settings.emailEnabled && styles.toggleThumbActive,
+                      ]}
+                    />
                   </TouchableOpacity>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.settingItem, { borderBottomWidth: 0 }]}
                   onPress={() => toggleSetting("darkMode")}
                   activeOpacity={0.7}
@@ -800,74 +968,93 @@ export default function StudentProfileScreen() {
                     </View>
                     <View style={styles.settingText}>
                       <Text style={styles.settingTitle}>Dark Mode</Text>
-                      <Text style={styles.settingDescription}>Switch to dark theme</Text>
+                      <Text style={styles.settingDescription}>
+                        Switch to dark theme
+                      </Text>
                     </View>
                   </View>
                   <TouchableOpacity
                     onPress={() => toggleSetting("darkMode")}
-                    style={[styles.toggle, settings.darkMode ? styles.toggleActive : styles.toggleInactive]}
+                    style={[
+                      styles.toggle,
+                      settings.darkMode
+                        ? styles.toggleActive
+                        : styles.toggleInactive,
+                    ]}
                   >
-                    <View style={[styles.toggleThumb, settings.darkMode && styles.toggleThumbActive]} />
+                    <View
+                      style={[
+                        styles.toggleThumb,
+                        settings.darkMode && styles.toggleThumbActive,
+                      ]}
+                    />
                   </TouchableOpacity>
                 </TouchableOpacity>
               </View>
 
-              <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Security</Text>
+              <Text style={[styles.sectionTitle, { marginTop: 24 }]}>
+                Security
+              </Text>
               <View style={styles.formCard}>
-                <CustomTextInput 
-                  label="Current Password" 
-                  value={passwordData.oldPassword} 
-                  onChangeText={(val) => setPasswordData(prev => ({ ...prev, oldPassword: val }))}
-                  secureTextEntry 
-                  showPasswordToggle 
+                <CustomTextInput
+                  label="Current Password"
+                  value={passwordData.oldPassword}
+                  onChangeText={(val) =>
+                    setPasswordData((prev) => ({ ...prev, oldPassword: val }))
+                  }
+                  secureTextEntry
+                  showPasswordToggle
                   style={styles.input}
                   error={validationErrors.oldPassword}
                 />
-                <CustomTextInput 
-                  label="New Password" 
-                  value={passwordData.newPassword} 
-                  onChangeText={(val) => setPasswordData(prev => ({ ...prev, newPassword: val }))}
-                  secureTextEntry 
-                  showPasswordToggle 
+                <CustomTextInput
+                  label="New Password"
+                  value={passwordData.newPassword}
+                  onChangeText={(val) =>
+                    setPasswordData((prev) => ({ ...prev, newPassword: val }))
+                  }
+                  secureTextEntry
+                  showPasswordToggle
                   style={styles.input}
                   error={validationErrors.fullName}
                 />
-                <CustomTextInput 
-                  label="Email Address" 
-                  value={personalInfo.email} 
+                <CustomTextInput
+                  label="Email Address"
+                  value={personalInfo.email}
                   onChangeText={(val) => handlePersonalInfoChange("email", val)}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   style={styles.input}
                   error={validationErrors.email}
                 />
-                <CustomTextInput 
-                  label="Phone Number" 
-                  value={personalInfo.phone} 
+                <CustomTextInput
+                  label="Phone Number"
+                  value={personalInfo.phone}
                   onChangeText={(val) => handlePersonalInfoChange("phone", val)}
                   keyboardType="phone-pad"
                   style={styles.input}
                   error={validationErrors.phone}
                 />
-                <CustomTextInput 
-                  label="Date of Birth" 
-                  value={personalInfo.dob} 
+                <CustomTextInput
+                  label="Date of Birth"
+                  value={personalInfo.dob}
                   onChangeText={(val) => handlePersonalInfoChange("dob", val)}
                   style={styles.input}
                   placeholder="MM/DD/YYYY"
                 />
-                <CustomTextInput 
-                  label="Address" 
-                  value={personalInfo.address} 
-                  onChangeText={(val) => handlePersonalInfoChange("address", val)}
+                <CustomTextInput
+                  label="Address"
+                  value={personalInfo.address}
+                  onChangeText={(val) =>
+                    handlePersonalInfoChange("address", val)
+                  }
                   style={styles.input}
-             
                   error={validationErrors.address}
                 />
-                <Button 
-                  title={isSaving ? "Saving..." : "Save Changes"} 
-                  onPress={handleSavePersonal} 
-                  variant="primary" 
+                <Button
+                  title={isSaving ? "Saving..." : "Save Changes"}
+                  onPress={handleSavePersonal}
+                  variant="primary"
                   style={styles.saveButton}
                   disabled={isSaving || !hasUnsavedChanges}
                 />
@@ -889,67 +1076,108 @@ export default function StudentProfileScreen() {
                 <Text style={styles.appName}>Student Portal</Text>
                 <Text style={styles.appVersion}>Version 1.0.0</Text>
                 <Text style={styles.appDescription}>
-                  Empowering students by connecting them with donors and opportunities. 
-                  We strive to make education accessible and equitable for everyone.
+                  Empowering students by connecting them with donors and
+                  opportunities. We strive to make education accessible and
+                  equitable for everyone.
                 </Text>
               </View>
 
-              <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Information & Support</Text>
+              <Text style={[styles.sectionTitle, { marginTop: 24 }]}>
+                Information & Support
+              </Text>
               <View style={styles.settingsCard}>
-                <TouchableOpacity style={styles.settingItem} activeOpacity={0.7}>
+                <TouchableOpacity
+                  style={styles.settingItem}
+                  activeOpacity={0.7}
+                >
                   <View style={styles.settingInfo}>
                     <View style={styles.settingIconContainer}>
-                      <Ionicons name="document-text-outline" size={20} color="#2196F3" />
+                      <Ionicons
+                        name="document-text-outline"
+                        size={20}
+                        color="#2196F3"
+                      />
                     </View>
                     <View style={styles.settingText}>
                       <Text style={styles.settingTitle}>Terms of Service</Text>
-                      <Text style={styles.settingDescription}>Read our terms and conditions</Text>
+                      <Text style={styles.settingDescription}>
+                        Read our terms and conditions
+                      </Text>
                     </View>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color="#999" />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.settingItem} activeOpacity={0.7}>
+                <TouchableOpacity
+                  style={styles.settingItem}
+                  activeOpacity={0.7}
+                >
                   <View style={styles.settingInfo}>
                     <View style={styles.settingIconContainer}>
-                      <Ionicons name="shield-checkmark-outline" size={20} color="#4CAF50" />
+                      <Ionicons
+                        name="shield-checkmark-outline"
+                        size={20}
+                        color="#4CAF50"
+                      />
                     </View>
                     <View style={styles.settingText}>
                       <Text style={styles.settingTitle}>Privacy Policy</Text>
-                      <Text style={styles.settingDescription}>Learn how we protect your data</Text>
+                      <Text style={styles.settingDescription}>
+                        Learn how we protect your data
+                      </Text>
                     </View>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color="#999" />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.settingItem} activeOpacity={0.7}>
+                <TouchableOpacity
+                  style={styles.settingItem}
+                  activeOpacity={0.7}
+                >
                   <View style={styles.settingInfo}>
                     <View style={styles.settingIconContainer}>
-                      <Ionicons name="help-circle-outline" size={20} color="#FF9800" />
+                      <Ionicons
+                        name="help-circle-outline"
+                        size={20}
+                        color="#FF9800"
+                      />
                     </View>
                     <View style={styles.settingText}>
                       <Text style={styles.settingTitle}>Help Center</Text>
-                      <Text style={styles.settingDescription}>Find answers to common questions</Text>
+                      <Text style={styles.settingDescription}>
+                        Find answers to common questions
+                      </Text>
                     </View>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color="#999" />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.settingItem, { borderBottomWidth: 0 }]} activeOpacity={0.7}>
+                <TouchableOpacity
+                  style={[styles.settingItem, { borderBottomWidth: 0 }]}
+                  activeOpacity={0.7}
+                >
                   <View style={styles.settingInfo}>
                     <View style={styles.settingIconContainer}>
-                      <Ionicons name="chatbubble-ellipses-outline" size={20} color="#9C27B0" />
+                      <Ionicons
+                        name="chatbubble-ellipses-outline"
+                        size={20}
+                        color="#9C27B0"
+                      />
                     </View>
                     <View style={styles.settingText}>
                       <Text style={styles.settingTitle}>Contact Support</Text>
-                      <Text style={styles.settingDescription}>Get help from our team</Text>
+                      <Text style={styles.settingDescription}>
+                        Get help from our team
+                      </Text>
                     </View>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color="#999" />
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.copyrightText}>© 2024 Student Portal. All rights reserved.</Text>
+              <Text style={styles.copyrightText}>
+                © 2024 Student Portal. All rights reserved.
+              </Text>
             </View>
           )}
         </Animated.View>
@@ -958,10 +1186,10 @@ export default function StudentProfileScreen() {
       </ScrollView>
 
       {/* Logout Modal */}
-      <Modal 
-        visible={showLogoutModal} 
-        transparent 
-        animationType="fade" 
+      <Modal
+        visible={showLogoutModal}
+        transparent
+        animationType="fade"
         onRequestClose={() => setShowLogoutModal(false)}
       >
         <View style={styles.modalOverlay}>
@@ -973,18 +1201,21 @@ export default function StudentProfileScreen() {
             </View>
             <Text style={styles.modalTitle}>Logout Confirmation</Text>
             <Text style={styles.modalSubtitle}>
-              Are you sure you want to logout? You can log back in anytime with your credentials.
+              Are you sure you want to logout? You can log back in anytime with
+              your credentials.
             </Text>
             <View style={styles.modalActions}>
-              <Button 
-                title="Cancel" 
-                onPress={() => setShowLogoutModal(false)} 
-                variant="secondary" 
+              <Button
+                title="Cancel"
+                onPress={() => setShowLogoutModal(false)}
+                variant="secondary"
+                style={{ flex: 1 }}
               />
-              <Button 
-                title="Logout" 
-                onPress={handleLogout} 
-                variant="primary" 
+              <Button
+                title="Logout"
+                onPress={handleLogout}
+                variant="primary"
+                style={{ flex: 1 }}
               />
             </View>
           </View>
@@ -992,37 +1223,44 @@ export default function StudentProfileScreen() {
       </Modal>
 
       {/* Delete Document Modal */}
-      <Modal 
-        visible={showDeleteModal} 
-        transparent 
-        animationType="fade" 
+      <Modal
+        visible={showDeleteModal}
+        transparent
+        animationType="fade"
         onRequestClose={() => setShowDeleteModal(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalIconContainer}>
-              <View style={[styles.modalIconCircle, { backgroundColor: "#F44336" + "15" }]}>
+              <View
+                style={[
+                  styles.modalIconCircle,
+                  { backgroundColor: "#F44336" + "15" },
+                ]}
+              >
                 <Ionicons name="trash-outline" size={32} color="#F44336" />
               </View>
             </View>
             <Text style={styles.modalTitle}>Delete Document</Text>
             <Text style={styles.modalSubtitle}>
-              Are you sure you want to delete this document? This action cannot be undone.
+              Are you sure you want to delete this document? This action cannot
+              be undone.
             </Text>
             <View style={styles.modalActions}>
-              <Button 
-                title="Cancel" 
+              <Button
+                title="Cancel"
                 onPress={() => {
                   setShowDeleteModal(false);
                   setSelectedDocument(null);
-                }} 
-                variant="secondary" 
+                }}
+                variant="secondary"
+                style={{ flex: 1 }}
               />
-              <Button 
-                title="Delete" 
-                onPress={confirmDeleteDocument} 
-                variant="primary" 
-                style={{ backgroundColor: "#F44336" }}
+              <Button
+                title="Delete"
+                onPress={confirmDeleteDocument}
+                variant="primary"
+                style={{ backgroundColor: "#F44336", flex: 1 }}
               />
             </View>
           </View>
@@ -1624,7 +1862,8 @@ const styles = StyleSheet.create({
   },
   modalActions: {
     flexDirection: "row",
-    gap: 12,
+    justifyContent: "center",
+    gap: 10,
   },
   loadingOverlay: {
     position: "absolute",
@@ -1654,7 +1893,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-
-
-
-        
