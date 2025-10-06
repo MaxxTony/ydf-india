@@ -9,6 +9,7 @@ import { MotiView } from "moti";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import StepIndicator from "react-native-step-indicator";
 import { z } from "zod";
 
 type DocumentItem = {
@@ -215,7 +216,35 @@ export default function ApplyFormScreen() {
 
   const Stepper = () => {
     const totalWidth = STEP_ITEM_WIDTH * STEPS.length;
-    const progress = STEPS.length > 1 ? stepIndex / (STEPS.length - 1) : 0;
+    // Colorful theme
+    const colorActive = "#111827"; // near-black
+    const colorDone = "#10B981"; // emerald
+    const colorPending = "#D1D5DB"; // gray-300
+    const colorLabel = "#6B7280";
+    const customStyles = {
+      stepIndicatorSize: 28,
+      currentStepIndicatorSize: 32,
+      separatorStrokeWidth: 3,
+      currentStepStrokeWidth: 2,
+      stepStrokeWidth: 2,
+      stepStrokeCurrentColor: colorActive,
+      stepStrokeFinishedColor: colorDone,
+      stepStrokeUnFinishedColor: colorPending,
+      separatorFinishedColor: colorDone,
+      separatorUnFinishedColor: colorPending,
+      stepIndicatorFinishedColor: colorDone,
+      stepIndicatorUnFinishedColor: "#FFFFFF",
+      stepIndicatorCurrentColor: "#FFFFFF",
+      stepIndicatorLabelFontSize: 12,
+      currentStepIndicatorLabelFontSize: 12,
+      stepIndicatorLabelCurrentColor: colorActive,
+      stepIndicatorLabelFinishedColor: "#FFFFFF",
+      stepIndicatorLabelUnFinishedColor: "#9CA3AF",
+      labelColor: colorLabel,
+      currentStepLabelColor: colorActive,
+      labelSize: 11,
+    } as const;
+
     return (
       <View style={styles.stepperContainer}>
         <View style={styles.stepperInner}>
@@ -225,57 +254,19 @@ export default function ApplyFormScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ width: totalWidth }}
           >
-            <View style={[styles.stepperTrack, { width: totalWidth }]}>
-              <View style={styles.stepperBaseLine} />
-              <MotiView
-                style={styles.stepperActiveLine}
-                from={{ width: 0 }}
-                animate={{ width: (totalWidth - 0) * progress }}
-                transition={{ type: "timing", duration: 250 }}
+            <View style={{ width: totalWidth, paddingVertical: 6 }}>
+              <StepIndicator
+                stepCount={STEPS.length}
+                currentPosition={stepIndex}
+                customStyles={customStyles}
+                direction="horizontal"
+                labels={STEPS.map((s) => s.title)}
+                onPress={() => { /* disabled by requirement */ }}
               />
-              {STEPS.map((s, i) => {
-                const left = i * STEP_ITEM_WIDTH + STEP_ITEM_WIDTH / 2 - 10; // center dot
-                const completed = i < stepIndex;
-                const active = i === stepIndex;
-                return (
-                  <TouchableOpacity
-                    key={s.key}
-                    style={[styles.stepperDot, { left }]}
-                    onPress={() => setStepIndex((curr) => {
-                      const ni = i <= curr + 1 ? i : curr;
-                      requestAnimationFrame(() => centerActiveStep(ni));
-                      return ni;
-                    })}
-                    activeOpacity={0.85}
-                  >
-                    <View style={[styles.dotCircle, completed && styles.dotCompleted, active && styles.dotActive]}>
-                      {completed ? <Ionicons name="checkmark" size={12} color="#fff" /> : null}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </ScrollView>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            ref={undefined}
-            contentContainerStyle={{ width: totalWidth }}
-          >
-            <View style={{ height: 24, marginTop: 8, width: totalWidth }}>
-              {STEPS.map((s, i) => {
-                const left = i * STEP_ITEM_WIDTH + STEP_ITEM_WIDTH / 2;
-                const active = i === stepIndex;
-                return (
-                  <Text key={`${s.key}-label`} style={[styles.stepperLabel, { left }, active && styles.stepperLabelActive]} numberOfLines={1}>
-                    {s.title}
-                  </Text>
-                );
-              })}
             </View>
           </ScrollView>
         </View>
-          </View>
+      </View>
     );
   };
 
@@ -291,7 +282,7 @@ export default function ApplyFormScreen() {
 
       <AppHeader title="Apply for Scholarship" onBack={() => router.back()} rightIcon={<TouchableOpacity onPress={onLoadDraft}><Ionicons name="cloud-download-outline" size={22} color="#333" /></TouchableOpacity>} />
 
-      <ScrollView ref={scrollRef} style={styles.scrollView} contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} style={styles.scrollView} contentContainerStyle={{ paddingBottom: 140,paddingTop:20 }} showsVerticalScrollIndicator={false}>
         <Stepper />
 
         <View style={styles.formContainer}>
@@ -423,18 +414,22 @@ export default function ApplyFormScreen() {
           <SavedIndicator />
         </View>
 
-        <View style={styles.actionContainer}>
-          <Button title="Resume Later" onPress={onSaveDraft} variant="secondary" style={styles.draftButton} />
-          {stepIndex > 0 && (
-            <Button title="Back" onPress={back} variant="secondary" style={styles.backButton} />
+        {/* Spacer handled via contentContainerStyle */}
+      </ScrollView>
+      <View style={styles.footer}>
+        <View style={styles.footerInner}>
+          {stepIndex === 0 ? (
+            <Button title="Resume Later" onPress={onSaveDraft} variant="secondary" style={styles.footerBtn} />
+          ) : (
+            <Button title="Back" onPress={back} variant="secondary" style={styles.footerBtn} />
           )}
           {stepIndex < STEPS.length - 1 ? (
-            <Button title="Next" onPress={next} variant="primary" style={styles.continueButton} />
+            <Button title="Next" onPress={next} variant="primary" style={[styles.footerBtn, styles.footerPrimary]} />
           ) : (
-            <Button title={isSubmitting ? "Submitting..." : "Submit"} onPress={onSubmit} variant="primary" style={styles.continueButton} disabled={isSubmitting} />
+            <Button title={isSubmitting ? "Submitting..." : "Submit"} onPress={onSubmit} variant="primary" style={[styles.footerBtn, styles.footerPrimary]} disabled={isSubmitting} />
           )}
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -546,16 +541,30 @@ const styles = StyleSheet.create({
     color: "#4CAF50",
     marginLeft: 6,
   },
-  actionContainer: {
+  footer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  footerInner: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingBottom: 28,
     gap: 10,
+    backgroundColor: "rgba(255,255,255,0.98)",
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: -2 },
   },
-  draftButton: { flex: 1 },
-  backButton: { flex: 1 },
-  continueButton: { flex: 1.5 },
+  footerBtn: { flex: 1 },
+  footerPrimary: { flex: 1.2 },
   docItem: {
     flexDirection: "row",
     alignItems: "center",

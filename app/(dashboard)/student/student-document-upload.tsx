@@ -1,50 +1,71 @@
-import { Button } from "@/components";
+import { AppHeader, Button } from "@/components";
 import { Ionicons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-const requiredDocuments = [
+type DocumentStatus = "uploaded" | "pending" | "rejected";
+type DocumentLabel = "approved" | "rejected" | "pending";
+
+type RequiredDocument = {
+  id: number;
+  name: string;
+  description: string;
+  status: DocumentStatus;
+  label: DocumentLabel;
+  size: string | null;
+  type: string;
+  uri?: string | null;
+  rejectedReason?: string | null;
+};
+
+const initialRequiredDocuments: RequiredDocument[] = [
   {
     id: 1,
-    name: "Official Transcript",
-    description: "Most recent official academic transcript",
-    status: "uploaded",
-    size: "2.3 MB",
-    type: "PDF"
+    name: "College certificate",
+    description: "Upload your college certificate",
+    status: "pending",
+    label: "pending",
+    size: null,
+    type: "PDF",
   },
   {
     id: 2,
-    name: "Letter of Recommendation",
-    description: "From a teacher or academic advisor",
+    name: "College ID",
+    description: "Upload your college ID",
     status: "pending",
+    label: "pending",
     size: null,
-    type: "PDF"
+    type: "PDF",
   },
   {
     id: 3,
-    name: "Financial Aid Form",
-    description: "Completed financial aid application",
-    status: "uploaded",
-    size: "1.8 MB",
-    type: "PDF"
+    name: "College marksheet",
+    description: "Upload your latest marksheet",
+    status: "pending",
+    label: "pending",
+    size: null,
+    type: "PDF",
   },
   {
     id: 4,
-    name: "Proof of Enrollment",
-    description: "Current semester enrollment verification",
+    name: "Income proof",
+    description: "Upload income proof document",
     status: "pending",
+    label: "pending",
     size: null,
-    type: "PDF"
+    type: "PDF",
   },
-  {
-    id: 5,
-    name: "Personal Statement",
-    description: "Your scholarship application essay",
-    status: "uploaded",
-    size: "456 KB",
-    type: "PDF"
-  }
 ];
 
 const digiLockerDocuments = [
@@ -53,25 +74,133 @@ const digiLockerDocuments = [
     name: "Aadhaar Card",
     description: "Government issued ID",
     status: "available",
-    source: "DigiLocker"
+    source: "DigiLocker",
   },
   {
     id: 2,
     name: "PAN Card",
     description: "Tax identification document",
     status: "available",
-    source: "DigiLocker"
+    source: "DigiLocker",
   },
   {
     id: 3,
     name: "Bank Statement",
     description: "Last 3 months bank statement",
     status: "available",
-    source: "DigiLocker"
-  }
+    source: "DigiLocker",
+  },
 ];
 
+// Upload types grid removed in favor of per-document controls
+
 export default function DocumentUploadScreen() {
+  const [documents, setDocuments] = useState<RequiredDocument[]>(
+    initialRequiredDocuments
+  );
+  // No upload progress per requirements
+
+  async function handlePickFile(docId?: number) {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf", "image/*"],
+        multiple: false,
+      });
+      if (result.canceled) return;
+      const asset = result.assets?.[0];
+      if (!asset) return;
+      const sizeMb = asset.size
+        ? `${(asset.size / (1024 * 1024)).toFixed(1)} MB`
+        : null;
+      setDocuments((prev) =>
+        prev.map((d) => {
+          if (docId ? d.id === docId : d.status !== "uploaded") {
+            return {
+              ...d,
+              status: "uploaded",
+              label: "approved",
+              size: sizeMb,
+              type: asset.mimeType?.toUpperCase()?.includes("PDF")
+                ? "PDF"
+                : "FILE",
+              uri: asset.uri,
+              rejectedReason: null,
+            };
+          }
+          return d;
+        })
+      );
+    } catch (e) {
+      Alert.alert("Upload failed", "Please try again.");
+    }
+  }
+
+  async function handleCameraCapture() {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission required",
+          "Camera permission is needed to capture documents."
+        );
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.8,
+      });
+      if (result.canceled) return;
+      const asset = result.assets?.[0];
+      if (!asset) return;
+      const sizeMb = asset.fileSize
+        ? `${(asset.fileSize / (1024 * 1024)).toFixed(1)} MB`
+        : null;
+      setDocuments((prev) => {
+        const targetIndex = prev.findIndex((d) => d.status !== "uploaded");
+        if (targetIndex === -1) return prev;
+        const target = prev[targetIndex];
+        const updated: RequiredDocument = {
+          ...target,
+          status: "uploaded",
+          label: "approved",
+          size: sizeMb ?? target.size,
+          type: "IMAGE",
+          uri: asset.uri,
+          rejectedReason: null,
+        };
+        const copy = [...prev];
+        copy[targetIndex] = updated;
+        return copy;
+      });
+    } catch (e) {
+      Alert.alert("Camera error", "Unable to capture image. Please try again.");
+    }
+  }
+
+
+
+  function handleDelete(id: number) {
+    setDocuments((prev) =>
+      prev.map((d) =>
+        d.id === id
+          ? { ...d, status: "pending", label: "pending", size: null, uri: null }
+          : d
+      )
+    );
+  }
+
+  function handleConnectDigiLocker() {
+    Alert.alert(
+      "DigiLocker",
+      "Connecting to DigiLocker is not configured yet."
+    );
+  }
+
+  function handleSyncDigiLocker() {
+    Alert.alert("DigiLocker", "DigiLocker Sync: updating to latest documents...");
+  }
+
   return (
     <View style={styles.container}>
       {/* Gradient Background */}
@@ -80,86 +209,135 @@ export default function DocumentUploadScreen() {
         style={styles.background}
         locations={[0, 0.3, 1]}
       />
-
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Document Upload</Text>
-          <View style={styles.placeholder} />
-        </View>
-
-        {/* Progress Indicator */}
-        <View style={styles.progressContainer}>
-          <View style={styles.progressStep}>
-            <View style={[styles.progressDot, styles.progressDotCompleted]} />
-            <Text style={styles.progressText}>Personal Info</Text>
-          </View>
-          <View style={[styles.progressLine, styles.progressLineCompleted]} />
-          <View style={styles.progressStep}>
-            <View style={[styles.progressDot, styles.progressDotActive]} />
-            <Text style={styles.progressText}>Documents</Text>
-          </View>
-          <View style={styles.progressLine} />
-          <View style={styles.progressStep}>
-            <View style={styles.progressDot} />
-            <Text style={styles.progressText}>Review</Text>
-          </View>
-        </View>
-
-        {/* Upload Progress */}
-        <View style={styles.progressCard}>
-          <View style={styles.progressHeader}>
-            <Text style={styles.progressTitle}>Upload Progress</Text>
-            <Text style={styles.progressPercentage}>60% Complete</Text>
-          </View>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '60%' }]} />
-          </View>
-          <Text style={styles.progressSubtext}>3 of 5 documents uploaded</Text>
-        </View>
+      <AppHeader
+        title="Document Upload"
+        onBack={() => router.back()}
+        rightIcon={<View />}
+      />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{ paddingVertical: 20 }}
+        showsVerticalScrollIndicator={false}
+      >
 
         {/* Required Documents */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Required Documents</Text>
-          {requiredDocuments.map((doc) => (
+          {documents.map((doc) => (
             <View key={doc.id} style={styles.documentCard}>
               <View style={styles.documentHeader}>
                 <View style={styles.documentInfo}>
                   <Text style={styles.documentName}>{doc.name}</Text>
-                  <Text style={styles.documentDescription}>{doc.description}</Text>
+                  <Text style={styles.documentDescription}>
+                    {doc.description}
+                  </Text>
                 </View>
                 <View style={styles.documentStatus}>
-                  {doc.status === 'uploaded' ? (
-                    <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+                  {doc.status === "uploaded" ? (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={24}
+                      color="#4CAF50"
+                    />
+                  ) : doc.status === "rejected" ? (
+                    <Ionicons name="close-circle" size={24} color="#F44336" />
                   ) : (
-                    <Ionicons name="cloud-upload-outline" size={24} color="#666" />
+                    <Ionicons
+                      name="cloud-upload-outline"
+                      size={24}
+                      color="#666"
+                    />
                   )}
                 </View>
               </View>
-              
-              {doc.status === 'uploaded' ? (
+              <View style={styles.badgeRow}>
+                <View
+                  style={[
+                    styles.badge,
+                    doc.label === "approved" && styles.badgeSuccess,
+                    doc.label === "rejected" && styles.badgeError,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.badgeText,
+                      (doc.label === "approved" || doc.label === "rejected") &&
+                        styles.badgeTextDark,
+                    ]}
+                  >
+                    {doc.label === "approved"
+                      ? "Approved"
+                      : doc.label === "rejected"
+                      ? "Rejected"
+                      : "Pending"}
+                  </Text>
+                </View>
+                {doc.status === "uploaded" && (
+                  <View style={styles.metaPill}>
+                    <Text style={styles.metaPillText}>
+                      {doc.type}
+                      {doc.size ? ` • ${doc.size}` : ""}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              {doc.status === "rejected" && !!doc.rejectedReason && (
+                <View style={styles.rejectedBanner}>
+                  <Ionicons
+                    name="alert-circle-outline"
+                    size={16}
+                    color="#F44336"
+                  />
+                  <Text style={styles.rejectedText}>
+                    Rejected: {doc.rejectedReason}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.smallLink}
+                    onPress={() => handlePickFile(doc.id)}
+                  >
+                    <Text style={styles.smallLinkText}>Re-upload</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {doc.status !== "uploaded" ? (
+                <View style={styles.controlsRow}>
+                  <TouchableOpacity
+                    style={styles.smallAction}
+                    onPress={() => handlePickFile(doc.id)}
+                  >
+                    <Ionicons name="document-text-outline" size={16} color="#4CAF50" />
+                    <Text style={styles.smallActionText}>Document Picker</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.smallAction}
+                    onPress={() => handleCameraCapture()}
+                  >
+                    <Ionicons name="camera-outline" size={16} color="#4CAF50" />
+                    <Text style={styles.smallActionText}>Camera</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
                 <View style={styles.uploadedInfo}>
                   <View style={styles.fileInfo}>
                     <Ionicons name="document-outline" size={16} color="#2196F3" />
                     <Text style={styles.fileText}>{doc.type} • {doc.size}</Text>
                   </View>
-                  <TouchableOpacity style={styles.actionButton}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => Alert.alert("View", "Viewer will be integrated later.")}
+                  >
                     <Ionicons name="eye-outline" size={16} color="#666" />
                     <Text style={styles.actionText}>View</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.actionButton}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => handleDelete(doc.id)}
+                  >
                     <Ionicons name="trash-outline" size={16} color="#F44336" />
                     <Text style={styles.actionText}>Delete</Text>
                   </TouchableOpacity>
                 </View>
-              ) : (
-                <TouchableOpacity style={styles.uploadButton}>
-                  <Ionicons name="cloud-upload-outline" size={20} color="#4CAF50" />
-                  <Text style={styles.uploadText}>Upload Document</Text>
-                </TouchableOpacity>
               )}
             </View>
           ))}
@@ -169,28 +347,55 @@ export default function DocumentUploadScreen() {
         <View style={styles.section}>
           <View style={styles.digiLockerHeader}>
             <Text style={styles.sectionTitle}>DigiLocker Documents</Text>
-            <TouchableOpacity style={styles.digiLockerButton}>
-              <Ionicons name="link-outline" size={16} color="#4CAF50" />
-              <Text style={styles.digiLockerText}>Connect DigiLocker</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <TouchableOpacity
+                style={[
+                  styles.digiLockerButton,
+                  { backgroundColor: "#4CAF50" },
+                ]}
+                onPress={handleConnectDigiLocker}
+              >
+                <Ionicons name="cloud-upload-outline" size={16} color="#fff" />
+                <Text style={[styles.digiLockerText, { color: "#fff" }]}>Upload using DigiLocker</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.digiLockerButton,
+                  {
+                    backgroundColor: "#fff",
+                    borderWidth: 1,
+                    borderColor: "#4CAF50",
+                  },
+                ]}
+                onPress={handleSyncDigiLocker}
+              >
+                <Ionicons name="sync-outline" size={16} color="#4CAF50" />
+                <Text style={[styles.digiLockerText, { color: "#4CAF50" }]}>DigiLocker Sync</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          
+
           <View style={styles.digiLockerCard}>
             <View style={styles.digiLockerInfo}>
               <Ionicons name="lock-closed-outline" size={24} color="#666" />
               <View style={styles.digiLockerTextContainer}>
-                <Text style={styles.digiLockerTitle}>DigiLocker Integration</Text>
+                <Text style={styles.digiLockerTitle}>
+                  DigiLocker Integration
+                </Text>
                 <Text style={styles.digiLockerDescription}>
-                  Securely import your government documents directly from DigiLocker
+                  Securely import your government documents directly from
+                  DigiLocker
                 </Text>
               </View>
             </View>
-            
+
             {digiLockerDocuments.map((doc) => (
               <TouchableOpacity key={doc.id} style={styles.digiLockerItem}>
                 <View style={styles.digiLockerItemInfo}>
                   <Text style={styles.digiLockerItemName}>{doc.name}</Text>
-                  <Text style={styles.digiLockerItemDescription}>{doc.description}</Text>
+                  <Text style={styles.digiLockerItemDescription}>
+                    {doc.description}
+                  </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color="#666" />
               </TouchableOpacity>
@@ -203,20 +408,44 @@ export default function DocumentUploadScreen() {
           <Text style={styles.sectionTitle}>Upload Tips</Text>
           <View style={styles.tipsCard}>
             <View style={styles.tipItem}>
-              <Ionicons name="checkmark-circle-outline" size={16} color="#4CAF50" />
-              <Text style={styles.tipText}>Supported formats: PDF, JPG, PNG (Max 10MB)</Text>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={16}
+                color="#4CAF50"
+              />
+              <Text style={styles.tipText}>
+                Supported formats: PDF, JPG, PNG (Max 10MB)
+              </Text>
             </View>
             <View style={styles.tipItem}>
-              <Ionicons name="checkmark-circle-outline" size={16} color="#4CAF50" />
-              <Text style={styles.tipText}>Ensure documents are clear and readable</Text>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={16}
+                color="#4CAF50"
+              />
+              <Text style={styles.tipText}>
+                Ensure documents are clear and readable
+              </Text>
             </View>
             <View style={styles.tipItem}>
-              <Ionicons name="checkmark-circle-outline" size={16} color="#4CAF50" />
-              <Text style={styles.tipText}>All documents must be in English or translated</Text>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={16}
+                color="#4CAF50"
+              />
+              <Text style={styles.tipText}>
+                All documents must be in English or translated
+              </Text>
             </View>
             <View style={styles.tipItem}>
-              <Ionicons name="checkmark-circle-outline" size={16} color="#4CAF50" />
-              <Text style={styles.tipText}>Keep original documents for verification</Text>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={16}
+                color="#4CAF50"
+              />
+              <Text style={styles.tipText}>
+                Keep original documents for verification
+              </Text>
             </View>
           </View>
         </View>
@@ -231,7 +460,9 @@ export default function DocumentUploadScreen() {
           />
           <Button
             title="Continue to Review"
-            onPress={() => router.push("/(dashboard)/student/student-application-status")}
+            onPress={() =>
+              router.push("/(dashboard)/student/student-application-status")
+            }
             variant="primary"
             style={styles.continueButton}
           />
@@ -256,25 +487,7 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#333",
-  },
-  placeholder: {
-    width: 40,
-  },
+  // AppHeader used instead of local header styles above
   progressContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -375,6 +588,43 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 12,
   },
+  badgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  badge: {
+    backgroundColor: "#FFF4E5",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  badgeSuccess: {
+    backgroundColor: "#E7F6EC",
+  },
+  badgeError: {
+    backgroundColor: "#FDEDED",
+  },
+  badgeText: {
+    fontSize: 12,
+    color: "#8A5A00",
+    fontWeight: "600",
+  },
+  badgeTextDark: {
+    color: "#2E7D32",
+  },
+  metaPill: {
+    backgroundColor: "#F5F5F5",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  metaPillText: {
+    fontSize: 12,
+    color: "#666",
+    fontWeight: "500",
+  },
   documentInfo: {
     flex: 1,
     marginRight: 12,
@@ -391,6 +641,29 @@ const styles = StyleSheet.create({
   },
   documentStatus: {
     alignItems: "center",
+  },
+  controlsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 8,
+    marginTop: 8,
+  },
+  smallAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#fff",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  smallActionText: {
+    fontSize: 12,
+    color: "#333",
+    fontWeight: "600",
   },
   uploadedInfo: {
     flexDirection: "row",
@@ -445,14 +718,12 @@ const styles = StyleSheet.create({
   digiLockerButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#4CAF50",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
   digiLockerText: {
     fontSize: 12,
-    color: "#fff",
     marginLeft: 4,
     fontWeight: "500",
   },
@@ -511,6 +782,86 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(51, 51, 51, 0.1)",
   },
+  typesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginBottom: 12,
+  },
+  typeItem: {
+    width: "48%",
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderWidth: 1,
+    borderColor: "rgba(51, 51, 51, 0.1)",
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  typeIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#E7F6EC",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  typeLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+  },
+  inlineActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  inlineBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#4CAF50",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  inlineBtnLight: {
+    backgroundColor: "#E7F6EC",
+  },
+  inlineBtnText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 12,
+  },
+  rejectedBanner: {
+    backgroundColor: "#FDEDED",
+    borderWidth: 1,
+    borderColor: "#F8BFBF",
+    borderRadius: 8,
+    padding: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  rejectedText: {
+    color: "#B71C1C",
+    fontSize: 12,
+    flex: 1,
+  },
+  smallLink: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#F8BFBF",
+  },
+  smallLinkText: {
+    color: "#B71C1C",
+    fontWeight: "700",
+    fontSize: 12,
+  },
   tipItem: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -533,7 +884,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   continueButton: {
-    flex: 2,
+    flex: 1,
   },
 });
-
