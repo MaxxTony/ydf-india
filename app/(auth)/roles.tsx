@@ -55,11 +55,11 @@ export default function RoleSelectionScreen() {
                 key={role.key}
                 onPress={() => {
                   if (role.key === "employee") {
-                    router.replace("/(app)/employee-dashboard");
+                    router.replace("/(dashboard)/employee-dashboard");
                   } else if (role.key === "student") {
-                    router.replace("/(app)/student-dashboard");
+                    router.replace("/(dashboard)/student-dashboard");
                   } else if (role.key === "donor") {
-                    router.replace("/(app)/donor-dashboard");
+                    router.replace("/(dashboard)/donor-dashboard");
                   } 
                 }}
                 style={[styles.roleCard, { borderLeftColor: role.color }]}

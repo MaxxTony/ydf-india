@@ -1,7 +1,7 @@
 import { Button } from "@/components";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const studentFeatures = [
@@ -98,6 +98,21 @@ export default function StudentDashboardScreen() {
                 key={feature.id}
                 style={[styles.featureCard, { borderLeftColor: feature.color }]}
                 activeOpacity={0.8}
+                onPress={() => {
+                  if (feature.id === 1) {
+                    router.push("/(dashboard)/student/student-scholarship-listing");
+                  } else if (feature.id === 2) {
+                    router.push("/(dashboard)/student/student-application-status");
+                  } else if (feature.id === 3) {
+                    router.push("/(dashboard)/student/student-document-upload");
+                  } else if (feature.id === 4) {
+                    router.push("/(dashboard)/student/student-notifications");
+                  } else if (feature.id === 5) {
+                    router.push("/(dashboard)/student/student-calendar");
+                  } else if (feature.id === 6) {
+                    router.push("/(dashboard)/student/student-profile");
+                  }
+                }}
               >
                 <View style={styles.featureContent}>
                   <View style={[styles.featureIcon, { backgroundColor: feature.color + '20' }]}>

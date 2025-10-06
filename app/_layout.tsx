@@ -12,11 +12,20 @@ export default function RootLayout() {
       <Stack.Screen name="(auth)/reset" options={{ title: "Reset password" }} />
       <Stack.Screen name="(auth)/roles" options={{ title: "Select role" }} />
 
-      {/* App screens */}
-   
-      <Stack.Screen name="(app)/employee-dashboard" options={{ title: "Employee Dashboard" }} />
-      <Stack.Screen name="(app)/student-dashboard" options={{ title: "Student Dashboard" }} />
-      <Stack.Screen name="(app)/donor-dashboard" options={{ title: "Donor Dashboard" }} />
+      {/* Dashboard screens */}
+      <Stack.Screen name="(dashboard)/employee-dashboard" options={{ title: "Employee Dashboard" }} />
+      <Stack.Screen name="(dashboard)/donor-dashboard" options={{ title: "Donor Dashboard" }} />
+      <Stack.Screen name="(dashboard)/student-dashboard" options={{ title: "Student Dashboard" }} />
+      
+      {/* Student Module Screens */}
+      <Stack.Screen name="(dashboard)/student/student-scholarship-listing" options={{ title: "Browse Scholarships" }} />
+      <Stack.Screen name="(dashboard)/student/student-scholarship-details" options={{ title: "Scholarship Details" }} />
+      <Stack.Screen name="(dashboard)/student/student-apply-form" options={{ title: "Apply for Scholarship" }} />
+      <Stack.Screen name="(dashboard)/student/student-document-upload" options={{ title: "Document Upload" }} />
+      <Stack.Screen name="(dashboard)/student/student-application-status" options={{ title: "Application Status" }} />
+      <Stack.Screen name="(dashboard)/student/student-notifications" options={{ title: "Notifications" }} />
+      <Stack.Screen name="(dashboard)/student/student-calendar" options={{ title: "Calendar & Reminders" }} />
+      <Stack.Screen name="(dashboard)/student/student-profile" options={{ title: "Profile & Settings" }} />
     </Stack>
   );
 }
