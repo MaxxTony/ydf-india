@@ -82,14 +82,16 @@ export default function ScholarshipDetailsScreen() {
     <View style={styles.container}>
       {/* Gradient Background */}
       <LinearGradient
-        colors={["#fff", "#fff", "#f2c44d"]}
+        colors={["#FFFFFF", "#FFF9EC", "#FFE4B5"]}
         style={styles.background}
-        locations={[0, 0.3, 1]}
+        locations={[0, 0.6, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
       />
- {/* App Header Replacement */}
-        <AppHeader title="Scholarship Details" onBack={() => router.back()} />
+      {/* App Header Replacement */}
+      <AppHeader title="Scholarship Details" onBack={() => router.back()} />
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-       
+
 
         {/* Banner / Logo */}
         <View style={styles.bannerCard}>
@@ -278,10 +280,10 @@ export default function ScholarshipDetailsScreen() {
               style={[styles.actionBtn, ...(saved ? [{ borderColor: "#4CAF50" }] : [])]}
               textStyle={saved ? { color: "#4CAF50" } : undefined}
             />
-            <Button
-              title="Apply Now"
-              onPress={() => router.push("/(dashboard)/student/student-apply-form")}
-              variant="primary"
+          <Button
+            title="Apply Now"
+            onPress={() => router.push("/(dashboard)/student/student-apply-form")}
+            variant="primary"
               style={[styles.actionBtn, { backgroundColor: scholarship.color }]}
               textStyle={{ color: "#fff" }}
             />
@@ -317,7 +319,7 @@ export default function ScholarshipDetailsScreen() {
 
                   <View style={styles.relatedDetails}>
                     <View style={styles.detailRow}>
-                      <View style={styles.detailIcon}> 
+                      <View style={styles.detailIcon}>
                         <Ionicons name="calendar-outline" size={16} color="#666" />
                       </View>
                       <View style={styles.detailContent}>
@@ -369,7 +371,7 @@ export default function ScholarshipDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f2c44d",
+    backgroundColor: "#FFF9EC",
   },
   background: {
     position: "absolute",
