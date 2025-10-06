@@ -1,7 +1,9 @@
+import { AppHeader } from "@/components";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const applications = [
   {
@@ -12,6 +14,7 @@ const applications = [
     statusText: "Under Review",
     submittedDate: "2024-02-15",
     deadline: "2024-03-15",
+    type: "Merit",
     color: "#FF9800",
     timeline: [
       {
@@ -36,6 +39,7 @@ const applications = [
     statusText: "Approved",
     submittedDate: "2024-01-20",
     deadline: "2024-03-20",
+    type: "Need-Based",
     color: "#4CAF50",
     timeline: [
       {
@@ -66,6 +70,7 @@ const applications = [
     statusText: "Rejected",
     submittedDate: "2024-01-10",
     deadline: "2024-03-10",
+    type: "STEM",
     color: "#F44336",
     timeline: [
       {
@@ -98,6 +103,131 @@ const statusColors = {
 };
 
 export default function ApplicationStatusScreen() {
+  const [selectedYear, setSelectedYear] = useState<string>("All");
+  const [selectedType, setSelectedType] = useState<string>("All");
+
+  const years = useMemo(() => {
+    const set = new Set<string>();
+    applications.forEach((a) => set.add(String(new Date(a.submittedDate).getFullYear())));
+    return ["All", ...Array.from(set).sort((a, b) => Number(b) - Number(a))];
+  }, []);
+
+  const types = useMemo(() => {
+    const set = new Set<string>();
+    applications.forEach((a) => set.add(a.type));
+    return ["All", ...Array.from(set)];
+  }, []);
+
+  const filtered = useMemo(() => {
+    return applications.filter((a) => {
+      const yearOk = selectedYear === "All" || String(new Date(a.submittedDate).getFullYear()) === selectedYear;
+      const typeOk = selectedType === "All" || a.type === selectedType;
+      return yearOk && typeOk;
+    });
+  }, [selectedYear, selectedType]);
+
+  const activeApps = useMemo(() => filtered.filter((a) => a.status === "under_review" || a.status === "submitted"), [filtered]);
+  const pastApps = useMemo(() => filtered.filter((a) => a.status === "approved" || a.status === "rejected"), [filtered]);
+
+  const totalCounts = useMemo(() => {
+    return {
+      total: filtered.length,
+      approved: filtered.filter((a) => a.status === "approved").length,
+      underReview: filtered.filter((a) => a.status === "under_review").length,
+      rejected: filtered.filter((a) => a.status === "rejected").length,
+    };
+  }, [filtered]);
+
+  const buildReceiptHtml = (a: (typeof applications)[number]) => `
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+          body { font-family: -apple-system, Roboto, Arial, sans-serif; padding: 24px; color: #333; }
+          .card { border: 1px solid #eee; border-radius: 12px; padding: 20px; }
+          h1 { margin: 0 0 8px; font-size: 22px; }
+          h2 { margin: 16px 0 8px; font-size: 16px; color: #666; }
+          .row { display: flex; justify-content: space-between; margin: 6px 0; }
+          .muted { color: #666; }
+          .badge { display:inline-block; padding:4px 10px; border-radius:999px; background:${a.color}22; color:${a.color}; font-weight:700; font-size:12px; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>Application Receipt</h1>
+          <div class="row"><div class="muted">Scholarship</div><div><strong>${a.title}</strong></div></div>
+          <div class="row"><div class="muted">Amount</div><div>${a.amount}</div></div>
+          <div class="row"><div class="muted">Submitted</div><div>${a.submittedDate}</div></div>
+          <div class="row"><div class="muted">Deadline</div><div>${a.deadline}</div></div>
+          <div class="row"><div class="muted">Type</div><div>${(a as any).type ?? "-"}</div></div>
+          <div style="margin-top:12px;">
+            <span class="badge">${a.statusText}</span>
+          </div>
+          <h2>Timeline</h2>
+          ${a.timeline
+            .map(
+              (t) => `
+            <div class="row">
+              <div class="muted">${t.date}</div>
+              <div>${t.title}</div>
+            </div>`
+            )
+            .join("")}
+        </div>
+      </body>
+    </html>
+  `;
+
+  const buildDecisionHtml = (a: (typeof applications)[number]) => `
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+          body { font-family: -apple-system, Roboto, Arial, sans-serif; padding: 24px; color: #333; }
+          .card { border: 1px solid #eee; border-radius: 12px; padding: 20px; }
+          h1 { margin: 0 0 8px; font-size: 22px; }
+          p { line-height: 1.5; }
+          .status { margin-top: 12px; font-weight: 800; color: ${a.color}; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>Decision Letter</h1>
+          <p>Scholarship: <strong>${a.title}</strong></p>
+          <p>Amount: ${a.amount}</p>
+          <p class="status">Status: ${a.statusText}</p>
+          <p>
+            ${a.status === "approved"
+              ? "Congratulations! Your application has been approved. Please review the next steps in your dashboard."
+              : a.status === "rejected"
+              ? "We appreciate your interest. Unfortunately, your application was not selected at this time."
+              : "Your application is currently under review."
+            }
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const handleDownloadReceipt = async (a: (typeof applications)[number]) => {
+    try {
+      const Print = await import("expo-print");
+      const { uri } = await Print.printToFileAsync({ html: buildReceiptHtml(a) });
+      Alert.alert("Receipt Ready", "Saved to: " + uri);
+    } catch (e) {
+      Alert.alert("Unavailable", "PDF generation is not available on this build.");
+    }
+  };
+
+  const handleViewDecision = async (a: (typeof applications)[number]) => {
+    try {
+      const Print = await import("expo-print");
+      await Print.printAsync({ html: buildDecisionHtml(a) });
+    } catch (e) {
+      Alert.alert("Unavailable", "PDF viewer is not available on this build.");
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Gradient Background */}
@@ -107,40 +237,76 @@ export default function ApplicationStatusScreen() {
         locations={[0, 0.3, 1]}
       />
 
+      {/* App Header outside scroll */}
+      <AppHeader title="Application Status" onBack={() => router.back()} />
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Application Status</Text>
-          <View style={styles.placeholder} />
+        {/* Filters */}
+        <View style={styles.filtersContainer}>
+          <View style={styles.filterRow}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
+              {years.map((y) => (
+                <TouchableOpacity
+                  key={`year-${y}`}
+                  onPress={() => setSelectedYear(y)}
+                  style={[styles.chip, selectedYear === y && styles.chipActive]}
+                >
+                  <Ionicons name="calendar-outline" size={14} color={selectedYear === y ? "#fff" : "#666"} />
+                  <Text style={[styles.chipText, selectedYear === y && styles.chipTextActive]}>{y}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+          <View style={styles.filterRow}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
+              {types.map((t) => (
+                <TouchableOpacity
+                  key={`type-${t}`}
+                  onPress={() => setSelectedType(t)}
+                  style={[styles.chip, selectedType === t && styles.chipActive]}
+                >
+                  <Ionicons name="pricetag-outline" size={14} color={selectedType === t ? "#fff" : "#666"} />
+                  <Text style={[styles.chipText, selectedType === t && styles.chipTextActive]}>{t}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+          {(selectedYear !== "All" || selectedType !== "All") && (
+            <TouchableOpacity onPress={() => { setSelectedYear("All"); setSelectedType("All"); }} style={styles.clearFiltersBtn}>
+              <Ionicons name="refresh-outline" size={16} color="#666" />
+              <Text style={styles.clearFiltersText}>Clear filters</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Summary Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>3</Text>
+            <Text style={styles.statNumber}>{totalCounts.total}</Text>
             <Text style={styles.statLabel}>Total Applications</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>1</Text>
+            <Text style={styles.statNumber}>{totalCounts.approved}</Text>
             <Text style={styles.statLabel}>Approved</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>1</Text>
+            <Text style={styles.statNumber}>{totalCounts.underReview}</Text>
             <Text style={styles.statLabel}>Under Review</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>1</Text>
+            <Text style={styles.statNumber}>{totalCounts.rejected}</Text>
             <Text style={styles.statLabel}>Rejected</Text>
           </View>
         </View>
-
-        {/* Applications List */}
+        {/* Active Applications */}
         <View style={styles.applicationsContainer}>
-          <Text style={styles.sectionTitle}>Your Applications</Text>
-          {applications.map((application) => (
+          <Text style={styles.sectionTitle}>Active Applications</Text>
+          {activeApps.length === 0 && (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>No active applications</Text>
+            </View>
+          )}
+          {activeApps.map((application) => (
             <View key={application.id} style={styles.applicationCard}>
               <View style={styles.applicationHeader}>
                 <View style={styles.applicationInfo}>
@@ -153,7 +319,7 @@ export default function ApplicationStatusScreen() {
                   </Text>
                 </View>
               </View>
-              
+
               <View style={styles.applicationDetails}>
                 <View style={styles.detailRow}>
                   <Ionicons name="calendar-outline" size={16} color="#666" />
@@ -186,46 +352,92 @@ export default function ApplicationStatusScreen() {
               </View>
 
               <View style={styles.applicationActions}>
-                <TouchableOpacity style={styles.actionButton}>
-                  <Ionicons name="eye-outline" size={16} color="#2196F3" />
+                <TouchableOpacity style={styles.actionButton} onPress={() => handleDownloadReceipt(application)}>
+                  <Ionicons name="document-text-outline" size={16} color="#2196F3" />
+                  <Text style={styles.actionText}>Download Receipt</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(dashboard)/student/student-scholarship-details") }>
+                  <Ionicons name="eye-outline" size={16} color="#666" />
                   <Text style={styles.actionText}>View Details</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton}>
-                  <Ionicons name="document-outline" size={16} color="#666" />
-                  <Text style={styles.actionText}>View Documents</Text>
-                </TouchableOpacity>
-                {application.status === 'rejected' && (
-                  <TouchableOpacity style={styles.actionButton}>
-                    <Ionicons name="refresh-outline" size={16} color="#FF9800" />
-                    <Text style={styles.actionText}>Reapply</Text>
-                  </TouchableOpacity>
-                )}
               </View>
             </View>
           ))}
         </View>
 
-        {/* Quick Actions */}
-        <View style={styles.quickActionsContainer}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsGrid}>
-            <TouchableOpacity style={styles.quickActionCard}>
-              <Ionicons name="add-circle-outline" size={24} color="#4CAF50" />
-              <Text style={styles.quickActionText}>New Application</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionCard}>
-              <Ionicons name="search-outline" size={24} color="#2196F3" />
-              <Text style={styles.quickActionText}>Browse Scholarships</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionCard}>
-              <Ionicons name="notifications-outline" size={24} color="#FF9800" />
-              <Text style={styles.quickActionText}>Notifications</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionCard}>
-              <Ionicons name="help-circle-outline" size={24} color="#9C27B0" />
-              <Text style={styles.quickActionText}>Help & Support</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Past Applications */}
+        <View style={styles.applicationsContainer}>
+          <Text style={styles.sectionTitle}>Past Applications</Text>
+          {pastApps.length === 0 && (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>No past applications</Text>
+            </View>
+          )}
+          {pastApps.map((application) => (
+            <View key={application.id} style={styles.applicationCard}>
+              <View style={styles.applicationHeader}>
+                <View style={styles.applicationInfo}>
+                  <Text style={styles.applicationTitle}>{application.title}</Text>
+                  <Text style={styles.applicationAmount}>{application.amount}</Text>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: application.color + '20' }]}>
+                  <Text style={[styles.statusText, { color: application.color }]}>
+                    {application.statusText}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.applicationDetails}>
+                <View style={styles.detailRow}>
+                  <Ionicons name="calendar-outline" size={16} color="#666" />
+                  <Text style={styles.detailText}>Submitted: {application.submittedDate}</Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Ionicons name="time-outline" size={16} color="#666" />
+                  <Text style={styles.detailText}>Deadline: {application.deadline}</Text>
+                </View>
+              </View>
+
+              {/* Timeline */}
+              <View style={styles.timelineContainer}>
+                <Text style={styles.timelineTitle}>Application Timeline</Text>
+                {application.timeline.map((event, index) => (
+                  <View key={index} style={styles.timelineItem}>
+                    <View style={styles.timelineDot}>
+                      <View style={[
+                        styles.timelineDotInner,
+                        { backgroundColor: statusColors[event.status as keyof typeof statusColors] }
+                      ]} />
+                    </View>
+                    <View style={styles.timelineContent}>
+                      <Text style={styles.timelineEventTitle}>{event.title}</Text>
+                      <Text style={styles.timelineEventDescription}>{event.description}</Text>
+                      <Text style={styles.timelineEventDate}>{event.date}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+
+              <View style={styles.applicationActions}>
+                {application.status === 'approved' && (
+                  <TouchableOpacity style={styles.actionButton} onPress={() => handleViewDecision(application)}>
+                    <Ionicons name="document-text-outline" size={16} color="#4CAF50" />
+                    <Text style={styles.actionText}>View Decision Letter</Text>
+                  </TouchableOpacity>
+                )}
+                {application.status === 'rejected' && (
+                  <TouchableOpacity style={styles.actionButton} onPress={() => handleViewDecision(application)}>
+                    <Ionicons name="document-text-outline" size={16} color="#F44336" />
+                    <Text style={styles.actionText}>View Decision Letter</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.actionButton} onPress={() => handleDownloadReceipt(application)}>
+                  <Ionicons name="download-outline" size={16} color="#2196F3" />
+                  <Text style={styles.actionText}>Download Receipt</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
         </View>
       </ScrollView>
     </View>
@@ -247,24 +459,57 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  header: {
+  filtersContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  filterRow: {
+    marginBottom: 8,
+  },
+  chipsRow: {
+    gap: 8,
+  },
+  chip: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "#f8f8f8",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+    marginRight: 8,
   },
-  backButton: {
-    padding: 8,
+  chipActive: {
+    backgroundColor: "#333",
+    borderColor: "#333",
   },
-  headerTitle: {
-    fontSize: 20,
+  chipText: {
+    fontSize: 12,
+    color: "#666",
     fontWeight: "700",
-    color: "#333",
   },
-  placeholder: {
-    width: 40,
+  chipTextActive: {
+    color: "#fff",
+  },
+  clearFiltersBtn: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#eee",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  clearFiltersText: {
+    color: "#666",
+    fontWeight: "600",
+    fontSize: 12,
   },
   statsContainer: {
     flexDirection: "row",
@@ -302,6 +547,18 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#333",
     marginBottom: 16,
+  },
+  emptyState: {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(51, 51, 51, 0.1)",
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 12,
+    color: "#666",
   },
   applicationCard: {
     backgroundColor: "rgba(255, 255, 255, 0.95)",
@@ -421,30 +678,6 @@ const styles = StyleSheet.create({
     color: "#666",
     marginLeft: 4,
   },
-  quickActionsContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  quickActionsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  quickActionCard: {
-    width: "47%",
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 12,
-    padding: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(51, 51, 51, 0.1)",
-  },
-  quickActionText: {
-    fontSize: 12,
-    color: "#333",
-    marginTop: 8,
-    textAlign: "center",
-    fontWeight: "500",
-  },
 });
+
 
