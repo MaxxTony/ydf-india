@@ -365,8 +365,7 @@ export default function StudentProfileScreen() {
     setSettings((prev) => ({ ...prev, language: lang }));
     Alert.alert(
       "Language Changed",
-      `Language set to ${
-        lang === "en" ? "English" : lang === "fr" ? "Français" : "العربية"
+      `Language set to ${lang === "en" ? "English" : lang === "fr" ? "Français" : "العربية"
       }`
     );
   }, []);
@@ -570,6 +569,7 @@ export default function StudentProfileScreen() {
                   showPasswordToggle
                   style={styles.input}
                   error={validationErrors.confirmPassword}
+                  placeholder="••••••••"
                 />
                 <Button
                   title={isSaving ? "Updating..." : "Update Password"}
@@ -582,6 +582,76 @@ export default function StudentProfileScreen() {
                     !passwordData.newPassword ||
                     !passwordData.confirmPassword
                   }
+                />
+              </View>
+
+              <Text style={[styles.sectionTitle, { marginTop: 24 }]}>
+                Security
+              </Text>
+              <View style={styles.formCard}>
+                <CustomTextInput
+                  label="Current Password"
+                  value={passwordData.oldPassword}
+                  onChangeText={(val) =>
+                    setPasswordData((prev) => ({ ...prev, oldPassword: val }))
+                  }
+                  secureTextEntry
+                  showPasswordToggle
+                  style={styles.input}
+                  error={validationErrors.oldPassword}
+                  placeholder="••••••••"
+                />
+                <CustomTextInput
+                  label="New Password"
+                  value={passwordData.newPassword}
+                  onChangeText={(val) =>
+                    setPasswordData((prev) => ({ ...prev, newPassword: val }))
+                  }
+                  secureTextEntry
+                  showPasswordToggle
+                  style={styles.input}
+                  error={validationErrors.fullName}
+                  placeholder="••••••••"
+                />
+                <CustomTextInput
+                  label="Email Address"
+                  value={personalInfo.email}
+                  onChangeText={(val) => handlePersonalInfoChange("email", val)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  style={styles.input}
+                  error={validationErrors.email}
+                />
+                <CustomTextInput
+                  label="Phone Number"
+                  value={personalInfo.phone}
+                  onChangeText={(val) => handlePersonalInfoChange("phone", val)}
+                  keyboardType="phone-pad"
+                  style={styles.input}
+                  error={validationErrors.phone}
+                />
+                <CustomTextInput
+                  label="Date of Birth"
+                  value={personalInfo.dob}
+                  onChangeText={(val) => handlePersonalInfoChange("dob", val)}
+                  style={styles.input}
+                  placeholder="MM/DD/YYYY"
+                />
+                <CustomTextInput
+                  label="Address"
+                  value={personalInfo.address}
+                  onChangeText={(val) =>
+                    handlePersonalInfoChange("address", val)
+                  }
+                  style={styles.input}
+                  error={validationErrors.address}
+                />
+                <Button
+                  title={isSaving ? "Saving..." : "Save Changes"}
+                  onPress={handleSavePersonal}
+                  variant="primary"
+                  style={styles.saveButton}
+                  disabled={isSaving || !hasUnsavedChanges}
                 />
               </View>
 
@@ -611,7 +681,7 @@ export default function StudentProfileScreen() {
                         style={[
                           styles.langPillText,
                           settings.language === opt.code &&
-                            styles.langPillTextActive,
+                          styles.langPillTextActive,
                         ]}
                       >
                         {opt.label}
@@ -627,6 +697,8 @@ export default function StudentProfileScreen() {
                   ))}
                 </View>
               </View>
+
+
 
               <Text style={[styles.sectionTitle, { marginTop: 24 }]}>
                 Account Actions
@@ -795,8 +867,8 @@ export default function StudentProfileScreen() {
                                 doc.status === "verified"
                                   ? "#4CAF50" + "20"
                                   : doc.status === "pending"
-                                  ? "#FF9800" + "20"
-                                  : "#F44336" + "20",
+                                    ? "#FF9800" + "20"
+                                    : "#F44336" + "20",
                             },
                           ]}
                         >
@@ -805,16 +877,16 @@ export default function StudentProfileScreen() {
                               doc.status === "verified"
                                 ? "checkmark-circle"
                                 : doc.status === "pending"
-                                ? "time"
-                                : "close-circle"
+                                  ? "time"
+                                  : "close-circle"
                             }
                             size={12}
                             color={
                               doc.status === "verified"
                                 ? "#4CAF50"
                                 : doc.status === "pending"
-                                ? "#FF9800"
-                                : "#F44336"
+                                  ? "#FF9800"
+                                  : "#F44336"
                             }
                           />
                           <Text
@@ -825,16 +897,16 @@ export default function StudentProfileScreen() {
                                   doc.status === "verified"
                                     ? "#4CAF50"
                                     : doc.status === "pending"
-                                    ? "#FF9800"
-                                    : "#F44336",
+                                      ? "#FF9800"
+                                      : "#F44336",
                               },
                             ]}
                           >
                             {doc.status === "verified"
                               ? "Verified"
                               : doc.status === "pending"
-                              ? "Pending"
-                              : "Rejected"}
+                                ? "Pending"
+                                : "Rejected"}
                           </Text>
                         </View>
                       </View>
@@ -992,73 +1064,7 @@ export default function StudentProfileScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={[styles.sectionTitle, { marginTop: 24 }]}>
-                Security
-              </Text>
-              <View style={styles.formCard}>
-                <CustomTextInput
-                  label="Current Password"
-                  value={passwordData.oldPassword}
-                  onChangeText={(val) =>
-                    setPasswordData((prev) => ({ ...prev, oldPassword: val }))
-                  }
-                  secureTextEntry
-                  showPasswordToggle
-                  style={styles.input}
-                  error={validationErrors.oldPassword}
-                />
-                <CustomTextInput
-                  label="New Password"
-                  value={passwordData.newPassword}
-                  onChangeText={(val) =>
-                    setPasswordData((prev) => ({ ...prev, newPassword: val }))
-                  }
-                  secureTextEntry
-                  showPasswordToggle
-                  style={styles.input}
-                  error={validationErrors.fullName}
-                />
-                <CustomTextInput
-                  label="Email Address"
-                  value={personalInfo.email}
-                  onChangeText={(val) => handlePersonalInfoChange("email", val)}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  style={styles.input}
-                  error={validationErrors.email}
-                />
-                <CustomTextInput
-                  label="Phone Number"
-                  value={personalInfo.phone}
-                  onChangeText={(val) => handlePersonalInfoChange("phone", val)}
-                  keyboardType="phone-pad"
-                  style={styles.input}
-                  error={validationErrors.phone}
-                />
-                <CustomTextInput
-                  label="Date of Birth"
-                  value={personalInfo.dob}
-                  onChangeText={(val) => handlePersonalInfoChange("dob", val)}
-                  style={styles.input}
-                  placeholder="MM/DD/YYYY"
-                />
-                <CustomTextInput
-                  label="Address"
-                  value={personalInfo.address}
-                  onChangeText={(val) =>
-                    handlePersonalInfoChange("address", val)
-                  }
-                  style={styles.input}
-                  error={validationErrors.address}
-                />
-                <Button
-                  title={isSaving ? "Saving..." : "Save Changes"}
-                  onPress={handleSavePersonal}
-                  variant="primary"
-                  style={styles.saveButton}
-                  disabled={isSaving || !hasUnsavedChanges}
-                />
-              </View>
+
             </View>
           )}
 

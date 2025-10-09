@@ -11,7 +11,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import PhoneInput from "react-native-phone-number-input";
 
@@ -211,11 +211,13 @@ export default function SignInScreen() {
 
             {/* Sign In Button */}
             <Button
-              title={submitting
-                ? "Signing in..."
-                : loginMethod === "phone"
-                ? "Next"
-                : "Sign in"}
+              title={
+                submitting
+                  ? "Signing in..."
+                  : loginMethod === "phone"
+                  ? "Next"
+                  : "Sign in"
+              }
               onPress={onSubmit}
               disabled={submitting}
               loading={submitting}
@@ -256,6 +258,19 @@ export default function SignInScreen() {
                 style={styles.socialButton}
               >
                 <Ionicons name="logo-apple" size={20} color="#333" />
+              </Button>
+
+              {/* DigiLocker */}
+              <Button
+                title=""
+                onPress={() => router.push("/(auth)/roles")}
+                variant="social"
+                style={styles.socialButton}
+              >
+                <Image
+                  source={require("../../assets/appImages/digi.png")}
+                  style={{ width: 25, height: 25, tintColor: "#333" }}
+                />
               </Button>
             </View>
           </View>

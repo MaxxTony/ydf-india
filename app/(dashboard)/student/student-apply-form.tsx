@@ -8,7 +8,7 @@ import { router } from "expo-router";
 import { MotiView } from "moti";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import StepIndicator from "react-native-step-indicator";
 import { z } from "zod";
 
@@ -110,7 +110,7 @@ export default function ApplyFormScreen() {
         try {
           const parsed = JSON.parse(saved);
           reset(parsed);
-        } catch {}
+        } catch { }
       }
     })();
   }, [reset]);
@@ -178,12 +178,42 @@ export default function ApplyFormScreen() {
     scheduleSave();
   };
 
-  const onSubmit = handleSubmit(async (values) => {
-    // Simulate submit; replace with API call
-    await new Promise((r) => setTimeout(r, 800));
-    await AsyncStorage.removeItem(FORM_STORAGE_KEY);
-    router.back();
-  });
+  const fieldsByStep: Record<string, (keyof FormValues)[]> = {
+    personal: ["fullName", "email", "phone", "studentId"],
+    academic: ["institution", "major", "gradDate", "currentYear", "gpa"],
+    family: ["financial"],
+    documents: ["documents"],
+    summary: [],
+    declare: ["agreed"],
+  };
+
+  const findStepForField = (fieldName: keyof FormValues): number => {
+    const stepKey = (Object.keys(fieldsByStep) as (keyof typeof fieldsByStep)[])
+      .find((k) => (fieldsByStep[k] as (keyof FormValues)[]).includes(fieldName));
+    const idx = stepKey ? STEPS.findIndex((s) => s.key === stepKey) : 0;
+    return idx >= 0 ? idx : 0;
+  };
+
+  const onSubmit = handleSubmit(
+    async (values) => {
+      await AsyncStorage.removeItem(FORM_STORAGE_KEY);
+      router.replace("/(dashboard)/student-dashboard");
+    },
+    (formErrors) => {
+      // Jump to the first errored step and notify user
+      const firstErrorField = Object.keys(formErrors)[0] as keyof FormValues | undefined;
+      if (firstErrorField) {
+        const targetStep = findStepForField(firstErrorField);
+        setStepIndex(targetStep);
+        requestAnimationFrame(() => {
+          scrollRef.current?.scrollTo({ y: 0, animated: true });
+          centerActiveStep(targetStep);
+        });
+        const message = (formErrors[firstErrorField]?.message as string) || "Please complete required fields";
+        Alert.alert("Incomplete Application", message);
+      }
+    }
+  );
 
   const onSaveDraft = async () => {
     const data = getValues();
@@ -197,7 +227,7 @@ export default function ApplyFormScreen() {
       try {
         const parsed = JSON.parse(saved);
         reset(parsed);
-      } catch {}
+      } catch { }
     }
   };
 
@@ -205,7 +235,7 @@ export default function ApplyFormScreen() {
     <View style={styles.autoSaveContainer}>
       <Ionicons name="cloud-done-outline" size={16} color="#4CAF50" />
       <Text style={styles.autoSaveText}>{lastSavedAt ? `Saved ${new Date(lastSavedAt).toLocaleTimeString()}` : isDirty ? "Saving…" : "Auto-saved"}</Text>
-          </View>
+    </View>
   );
 
   const STEP_ITEM_WIDTH = 140; // roomy per-step width
@@ -282,7 +312,7 @@ export default function ApplyFormScreen() {
 
       <AppHeader title="Apply for Scholarship" onBack={() => router.back()} rightIcon={<TouchableOpacity onPress={onLoadDraft}><Ionicons name="cloud-download-outline" size={22} color="#333" /></TouchableOpacity>} />
 
-      <ScrollView ref={scrollRef} style={styles.scrollView} contentContainerStyle={{ paddingBottom: 140,paddingTop:20 }} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} style={styles.scrollView} contentContainerStyle={{ paddingBottom: 140, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
         <Stepper />
 
         <View style={styles.formContainer}>
@@ -380,7 +410,7 @@ export default function ApplyFormScreen() {
                     ["Major", getValues("major")],
                     ["Graduation", getValues("gradDate")],
                     ["Current Year", getValues("currentYear")],
-                    ["GPA", getValues("gpa") || "-"] ,
+                    ["GPA", getValues("gpa") || "-"],
                     ["Activities", getValues("activities") || "-"],
                     ["Work", getValues("work") || "-"],
                     ["Financial", getValues("financial") || "-"],
@@ -394,8 +424,8 @@ export default function ApplyFormScreen() {
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Documents</Text>
                   <Text style={styles.summaryValue}>{getValues("documents").length} file(s)</Text>
-          </View>
-          </View>
+                </View>
+              </View>
             </Section>
           )}
 

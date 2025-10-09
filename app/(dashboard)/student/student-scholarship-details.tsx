@@ -2,7 +2,7 @@ import { AppHeader, Button } from "@/components";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Image, LayoutAnimation, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, UIManager, View } from "react-native";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -49,22 +49,12 @@ const scholarship = {
 export default function ScholarshipDetailsScreen() {
   const [saved, setSaved] = useState(false);
   const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(null);
-  const [eligibilityChecks, setEligibilityChecks] = useState<Record<number, boolean>>({});
-
-  const isEligible = useMemo(() => {
-    const total = scholarship.eligibility.length;
-    const checked = Object.values(eligibilityChecks).filter(Boolean).length;
-    return { checked, total, pass: checked === total && total > 0 };
-  }, [eligibilityChecks]);
 
   const toggleFaq = (index: number) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setFaqOpenIndex((prev) => (prev === index ? null : index));
   };
 
-  const toggleEligibility = (index: number) => {
-    setEligibilityChecks((prev) => ({ ...prev, [index]: !prev[index] }));
-  };
 
   const getDaysRemaining = (deadline: string) => {
     const today = new Date();
@@ -152,30 +142,7 @@ export default function ScholarshipDetailsScreen() {
           </View>
         </View>
 
-        {/* Eligibility Criteria */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Eligibility Criteria</Text>
-          <View style={styles.criteriaCard}>
-            {scholarship.eligibility.map((criteria, index) => (
-              <TouchableOpacity key={index} onPress={() => toggleEligibility(index)} style={styles.criteriaItem} activeOpacity={0.8}>
-                <Ionicons
-                  name={eligibilityChecks[index] ? "checkbox" : "square-outline"}
-                  size={18}
-                  color={eligibilityChecks[index] ? "#4CAF50" : "#999"}
-                />
-                <Text style={styles.criteriaText}>{criteria}</Text>
-              </TouchableOpacity>
-            ))}
-            <View style={styles.eligibilityFooter}>
-              <View style={styles.progressBarBg}>
-                <View style={[styles.progressBarFill, { width: `${(isEligible.checked / Math.max(1, isEligible.total)) * 100}%`, backgroundColor: isEligible.pass ? "#4CAF50" : "#FF9800" }]} />
-              </View>
-              <Text style={[styles.eligibilityText, { color: isEligible.pass ? "#4CAF50" : "#FF9800" }]}>
-                {isEligible.checked}/{isEligible.total} met {isEligible.pass ? "• Eligible" : "• Keep checking"}
-              </Text>
-            </View>
-          </View>
-        </View>
+       
 
         {/* Benefits / Amount */}
         <View style={styles.section}>

@@ -250,6 +250,19 @@ export default function SignUpScreen() {
               >
                 <Ionicons name="logo-apple" size={20} color="#333" />
               </Button>
+
+              {/* DigiLocker */}
+              <Button
+                title=""
+                onPress={() => router.push("/(auth)/roles")}
+                variant="social"
+                style={styles.socialButton}
+              >
+                  <Image
+                  source={require("../../assets/appImages/digi.png")}
+                  style={{ width: 25, height: 25, tintColor: "#333" }}
+                />
+              </Button>
             </View>
           </View>
 

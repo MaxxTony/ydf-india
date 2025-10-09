@@ -13,8 +13,9 @@ export default function RootLayout() {
       <Stack.Screen name="(auth)/roles" options={{ title: "Select role" }} />
 
       {/* Dashboard screens */}
-      <Stack.Screen name="(dashboard)/employee-dashboard" options={{ title: "Employee Dashboard" }} />
-      <Stack.Screen name="(dashboard)/donor-dashboard" options={{ title: "Donor Dashboard" }} />
+      <Stack.Screen name="(dashboard)/student-mobilizer" options={{ title: "Student Mobilizer Dashboard" }} />
+      <Stack.Screen name="(dashboard)/application-reviewer" options={{ title: "Application Reviewer Dashboard" }} />
+      <Stack.Screen name="(dashboard)/scholarship-provider" options={{ title: "Scholarship Provider Dashboard" }} />
       <Stack.Screen name="(dashboard)/student-dashboard" options={{ title: "Student Dashboard" }} />
       
       {/* Student Module Screens */}

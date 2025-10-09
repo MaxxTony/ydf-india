@@ -58,12 +58,12 @@ const REQUIRED_DOCUMENTS: Document[] = [
   },
 ];
 
-type UploadMethod = "manual" | "digilocker";
+// Upload is initiated per document; no global method state
 
 export default function DocumentUploadScreen() {
   const [documents, setDocuments] = useState<Document[]>(REQUIRED_DOCUMENTS);
-  const [uploadMethod, setUploadMethod] = useState<UploadMethod>("manual");
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false); // method choice
+  const [showManualModal, setShowManualModal] = useState(false); // manual options
   const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
   const [isDigiLockerConnected, setIsDigiLockerConnected] = useState(false);
 
@@ -168,7 +168,8 @@ export default function DocumentUploadScreen() {
       )
     );
 
-    closeUploadModal();
+    setShowManualModal(false);
+    setShowUploadModal(false);
   };
 
   const handleDeleteDocument = (docId: number) => {
@@ -199,7 +200,7 @@ export default function DocumentUploadScreen() {
     );
   };
 
-  const handleConnectDigiLocker = () => {
+  const handleConnectDigiLocker = (onConnected?: () => void) => {
     // Simulate DigiLocker connection
     Alert.alert(
       "Connect to DigiLocker",
@@ -210,8 +211,8 @@ export default function DocumentUploadScreen() {
           text: "Connect",
           onPress: () => {
             setIsDigiLockerConnected(true);
-            setUploadMethod("digilocker");
             Alert.alert("Success", "DigiLocker connected successfully!");
+            if (onConnected) onConnected();
           },
         },
       ]
@@ -238,6 +239,23 @@ export default function DocumentUploadScreen() {
         },
       ]
     );
+  };
+
+  const handleDigiLockerImport = () => {
+    const importAction = () => {
+      updateDocument({
+        name: `DigiLocker_${Date.now()}.pdf`,
+        size: `0.2 MB`,
+        type: "PDF",
+        uri: `https://digilocker.example/document/${Date.now()}`,
+      });
+    };
+
+    if (!isDigiLockerConnected) {
+      handleConnectDigiLocker(importAction);
+    } else {
+      importAction();
+    }
   };
 
   const handleContinue = () => {
@@ -287,86 +305,7 @@ export default function DocumentUploadScreen() {
           </Text>
         </View>
 
-        {/* Upload Method Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Select Upload Method</Text>
-          <View style={styles.methodCard}>
-            <TouchableOpacity
-              style={[
-                styles.methodOption,
-                uploadMethod === "manual" && styles.methodOptionActive,
-              ]}
-              onPress={() => setUploadMethod("manual")}
-            >
-              <View
-                style={[
-                  styles.methodRadio,
-                  uploadMethod === "manual" && styles.methodRadioActive,
-                ]}
-              >
-                {uploadMethod === "manual" && (
-                  <View style={styles.methodRadioDot} />
-                )}
-              </View>
-              <Ionicons name="cloud-upload-outline" size={24} color="#4CAF50" />
-              <View style={styles.methodInfo}>
-                <Text style={styles.methodName}>Manual Upload</Text>
-                <Text style={styles.methodDesc}>
-                  Upload via camera or file picker
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <View style={styles.methodDivider} />
-
-            <TouchableOpacity
-              style={[
-                styles.methodOption,
-                uploadMethod === "digilocker" && styles.methodOptionActive,
-              ]}
-              onPress={() => {
-                if (!isDigiLockerConnected) {
-                  handleConnectDigiLocker();
-                } else {
-                  setUploadMethod("digilocker");
-                }
-              }}
-            >
-              <View
-                style={[
-                  styles.methodRadio,
-                  uploadMethod === "digilocker" && styles.methodRadioActive,
-                ]}
-              >
-                {uploadMethod === "digilocker" && (
-                  <View style={styles.methodRadioDot} />
-                )}
-              </View>
-              <Ionicons name="shield-checkmark" size={24} color="#2196F3" />
-              <View style={styles.methodInfo}>
-                <Text style={styles.methodName}>
-                  DigiLocker
-                  {isDigiLockerConnected && (
-                    <Text style={styles.connectedBadge}> • Connected</Text>
-                  )}
-                </Text>
-                <Text style={styles.methodDesc}>
-                  Import verified government documents
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            {uploadMethod === "digilocker" && isDigiLockerConnected && (
-              <TouchableOpacity
-                style={styles.syncButton}
-                onPress={handleSyncDigiLocker}
-              >
-                <Ionicons name="sync-outline" size={16} color="#2196F3" />
-                <Text style={styles.syncButtonText}>Sync DigiLocker</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
+        {/* Upload method is chosen per document; removed global selection */}
 
         {/* Required Documents */}
         <View style={styles.section}>
@@ -439,28 +378,14 @@ export default function DocumentUploadScreen() {
                 </View>
               )}
 
-              {/* Upload Button */}
-              {!doc.file && uploadMethod === "manual" && (
+              {/* Upload Button - always visible when no file */}
+              {!doc.file && (
                 <TouchableOpacity
                   style={styles.uploadButton}
                   onPress={() => openUploadModal(doc.id)}
                 >
                   <Ionicons name="add-circle" size={20} color="#4CAF50" />
-                  <Text style={styles.uploadButtonText}>Upload Document</Text>
-                </TouchableOpacity>
-              )}
-
-              {!doc.file && uploadMethod === "digilocker" && (
-                <TouchableOpacity
-                  style={[styles.uploadButton, styles.digilockerUploadBtn]}
-                  onPress={() =>
-                    Alert.alert("Info", "DigiLocker import coming soon")
-                  }
-                >
-                  <Ionicons name="download-outline" size={20} color="#2196F3" />
-                  <Text style={[styles.uploadButtonText, { color: "#2196F3" }]}>
-                    Import from DigiLocker
-                  </Text>
+                  <Text style={styles.uploadButtonText}>Upload</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -507,7 +432,7 @@ export default function DocumentUploadScreen() {
         </View>
       </ScrollView>
 
-      {/* Upload Method Modal */}
+        {/* Upload Method Choice Modal */}
       <Modal
         visible={showUploadModal}
         transparent
@@ -522,10 +447,73 @@ export default function DocumentUploadScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Choose Upload Method</Text>
 
+            {/* Manual upload path */}
             <TouchableOpacity
               style={styles.modalOption}
               onPress={() => {
-                closeUploadModal();
+                setShowUploadModal(false);
+                setShowManualModal(true);
+              }}
+            >
+              <View style={styles.modalIconWrap}>
+                <Ionicons name="cloud-upload-outline" size={24} color="#4CAF50" />
+              </View>
+              <View style={styles.modalOptionText}>
+                <Text style={styles.modalOptionTitle}>Manual Upload</Text>
+                <Text style={styles.modalOptionDesc}>Upload via camera or file picker</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#999" />
+            </TouchableOpacity>
+
+            <View style={styles.modalDivider} />
+
+            {/* DigiLocker path */}
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={() => {
+                setShowUploadModal(false);
+                handleDigiLockerImport();
+              }}
+            >
+              <View style={styles.modalIconWrap}>
+                <Ionicons name="shield-checkmark" size={24} color="#2196F3" />
+              </View>
+              <View style={styles.modalOptionText}>
+                <Text style={styles.modalOptionTitle}>DigiLocker</Text>
+                <Text style={styles.modalOptionDesc}>Import verified documents</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#999" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalCancel}
+              onPress={closeUploadModal}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Manual Upload Modal */}
+      <Modal
+        visible={showManualModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowManualModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowManualModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Manual Upload</Text>
+
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={() => {
+                setShowManualModal(false);
                 handleFileUpload();
               }}
             >
@@ -534,9 +522,7 @@ export default function DocumentUploadScreen() {
               </View>
               <View style={styles.modalOptionText}>
                 <Text style={styles.modalOptionTitle}>File Picker</Text>
-                <Text style={styles.modalOptionDesc}>
-                  Choose from your device storage
-                </Text>
+                <Text style={styles.modalOptionDesc}>Choose from your device storage</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#999" />
             </TouchableOpacity>
@@ -546,7 +532,7 @@ export default function DocumentUploadScreen() {
             <TouchableOpacity
               style={styles.modalOption}
               onPress={() => {
-                closeUploadModal();
+                setShowManualModal(false);
                 handleCameraCapture();
               }}
             >
@@ -555,16 +541,14 @@ export default function DocumentUploadScreen() {
               </View>
               <View style={styles.modalOptionText}>
                 <Text style={styles.modalOptionTitle}>Camera</Text>
-                <Text style={styles.modalOptionDesc}>
-                  Take a photo of your document
-                </Text>
+                <Text style={styles.modalOptionDesc}>Take a photo of your document</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#999" />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.modalCancel}
-              onPress={closeUploadModal}
+              onPress={() => setShowManualModal(false)}
             >
               <Text style={styles.modalCancelText}>Cancel</Text>
             </TouchableOpacity>

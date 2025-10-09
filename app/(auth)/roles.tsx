@@ -12,17 +12,24 @@ const roles = [
     color: "#4CAF50"
   },
   { 
-    key: "employee", 
-    label: "Employee", 
+    key: "application-reviewer", 
+    label: "Application Reviewer", 
     description: "Manage work and professional development",
     icon: "briefcase-outline",
     color: "#2196F3"
   },
   { 
-    key: "donor", 
-    label: "Donor", 
+    key: "scholarship-provider", 
+    label: "Scholarship Provider", 
     description: "Support causes and make a difference",
     icon: "heart-outline",
+    color: "#E91E63"
+  },
+  { 
+    key: "student-mobilizer", 
+    label: "Student Mobilizer", 
+    description: "Support causes and make a difference",
+    icon: "people-outline",
     color: "#E91E63"
   },
 ];
@@ -54,13 +61,15 @@ export default function RoleSelectionScreen() {
               <TouchableOpacity
                 key={role.key}
                 onPress={() => {
-                  if (role.key === "employee") {
-                    router.replace("/(dashboard)/employee-dashboard");
-                  } else if (role.key === "student") {
+                  if (role.key === "student") {
                     router.replace("/(dashboard)/student-dashboard");
-                  } else if (role.key === "donor") {
-                    router.replace("/(dashboard)/donor-dashboard");
-                  } 
+                  } else if (role.key === "application-reviewer") {
+                    router.replace("/(dashboard)/application-reviewer");
+                  } else if (role.key === "scholarship-provider") {
+                    router.replace("/(dashboard)/scholarship-provider");
+                  } else if (role.key === "student-mobilizer") {
+                    router.replace("/(dashboard)/student-mobilizer");
+                  }
                 }}
                 style={[styles.roleCard, { borderLeftColor: role.color }]}
                 activeOpacity={0.8}
