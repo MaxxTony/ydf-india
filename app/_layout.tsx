@@ -27,6 +27,21 @@ export default function RootLayout() {
       <Stack.Screen name="(dashboard)/student/student-notifications" options={{ title: "Notifications" }} />
       <Stack.Screen name="(dashboard)/student/student-calendar" options={{ title: "Calendar & Reminders" }} />
       <Stack.Screen name="(dashboard)/student/student-profile" options={{ title: "Profile & Settings" }} />
+
+      {/* Reviewer Module Screens */}
+      <Stack.Screen name="(dashboard)/reviewer/notifications" options={{ title: "Reviewer Notifications" }} />
+      <Stack.Screen name="(dashboard)/reviewer/applications" options={{ title: "All Applications" }} />
+      <Stack.Screen name="(dashboard)/reviewer/application-details" options={{ title: "Application Details" }} />
+      <Stack.Screen name="(dashboard)/reviewer/documents" options={{ title: "Check Documents" }} />
+      <Stack.Screen name="(dashboard)/reviewer/reports" options={{ title: "Reports" }} />
+      
+      {/* Reviewer Profile & Settings Screens */}
+      <Stack.Screen name="(dashboard)/reviewer/profile" options={{ title: "Profile" }} />
+      <Stack.Screen name="(dashboard)/reviewer/settings" options={{ title: "Settings" }} />
+      <Stack.Screen name="(dashboard)/reviewer/help-support" options={{ title: "Help & Support" }} />
+      <Stack.Screen name="(dashboard)/reviewer/contact-support" options={{ title: "Contact Support" }} />
+      <Stack.Screen name="(dashboard)/reviewer/terms-conditions" options={{ title: "Terms & Conditions" }} />
+      <Stack.Screen name="(dashboard)/reviewer/about" options={{ title: "About" }} />
     </Stack>
   );
 }
