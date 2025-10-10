@@ -30,7 +30,7 @@ export default function ReviewerHeader({
   };
 
   return (
-    <View style={[styles.header, { paddingTop: inset.top + 16 }]}>
+    <View style={[styles.header, { paddingTop: inset.top, marginBottom:10}]}>
       <View style={styles.headerRow}>
         {showBackButton && (
           <TouchableOpacity

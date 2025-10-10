@@ -17,6 +17,7 @@ interface CustomTextInputProps {
   style?: ViewStyle;
   inputStyle?: TextStyle;
   showPasswordToggle?: boolean;
+  maxLength?: number;
 }
 
 export default function CustomTextInput({
@@ -34,6 +35,7 @@ export default function CustomTextInput({
   style,
   inputStyle,
   showPasswordToggle = false,
+  maxLength,
 }: CustomTextInputProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -81,6 +83,7 @@ export default function CustomTextInput({
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
           style={[styles.input, inputStyle]}
+          maxLength={maxLength}
         />
         {showPasswordToggle && (
           <View style={styles.passwordToggle}>
