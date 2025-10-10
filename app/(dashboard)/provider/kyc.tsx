@@ -43,6 +43,7 @@ export default function ProviderKycScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   // Validation
   const validatePAN = (pan: string): boolean => {
@@ -77,7 +78,9 @@ export default function ProviderKycScreen() {
         }
         break;
       case 'ifsc':
-        if (value.length >= 11 && !validateIFSC(value)) {
+        if (value.length > 0 && value.length < 11) {
+          newErrors.ifsc = "IFSC must be 11 characters";
+        } else if (value.length >= 11 && !validateIFSC(value)) {
           newErrors.ifsc = "Invalid IFSC format (e.g., SBIN0001234)";
         } else {
           delete newErrors.ifsc;
@@ -88,6 +91,13 @@ export default function ProviderKycScreen() {
           newErrors.accountNumber = "Account number should be 9-18 digits";
         } else {
           delete newErrors.accountNumber;
+        }
+        break;
+      case 'accountHolderName':
+        if (value.length > 0 && value.trim().length < 3) {
+          newErrors.accountHolderName = "Account holder name too short";
+        } else {
+          delete newErrors.accountHolderName;
         }
         break;
       case 'organizationName':
@@ -102,6 +112,38 @@ export default function ProviderKycScreen() {
     setErrors(newErrors);
   };
 
+  const validateAllFields = () => {
+    const cleanPanAadhaar = panOrAadhaar.replace(/\s/g, '');
+    const newErrors: Record<string, string> = {};
+
+    if (!(cleanPanAadhaar.length === 10 && validatePAN(cleanPanAadhaar)) &&
+        !(cleanPanAadhaar.length === 12 && validateAadhaar(cleanPanAadhaar))) {
+      newErrors.panOrAadhaar = "Enter valid PAN (10 chars) or Aadhaar (12 digits)";
+    }
+
+    if (organizationName.trim().length < 3) {
+      newErrors.organizationName = "Organization name too short";
+    }
+
+    if (accountHolderName.trim().length < 3) {
+      newErrors.accountHolderName = "Account holder name too short";
+    }
+
+    const accountDigits = accountNumber.trim();
+    if (accountDigits.length < 9 || accountDigits.length > 18) {
+      newErrors.accountNumber = "Account number should be 9-18 digits";
+    }
+
+    if (!validateIFSC(ifsc)) {
+      newErrors.ifsc = "Invalid IFSC format (e.g., SBIN0001234)";
+    }
+
+    setErrors(newErrors);
+
+    const areDocsAttached = !!docPanCard && !!docBankStatement && !!docRegistrationCert;
+    return Object.keys(newErrors).length === 0 && areDocsAttached;
+  };
+
   const isFormValid = useMemo(() => {
     const cleanPanAadhaar = panOrAadhaar.replace(/\s/g, '');
     const isPanValid = cleanPanAadhaar.length === 10 && validatePAN(cleanPanAadhaar);
@@ -113,7 +155,6 @@ export default function ProviderKycScreen() {
     const isHolderValid = accountHolderName.trim().length >= 3;
     const isIfscValid = validateIFSC(ifsc);
     const areDocsAttached = !!docPanCard && !!docBankStatement && !!docRegistrationCert;
-    const hasNoErrors = Object.keys(errors).length === 0;
 
     return (
       isIdentityValid &&
@@ -121,10 +162,9 @@ export default function ProviderKycScreen() {
       isAccountValid &&
       isHolderValid &&
       isIfscValid &&
-      areDocsAttached &&
-      hasNoErrors
+      areDocsAttached
     );
-  }, [panOrAadhaar, organizationName, accountNumber, accountHolderName, ifsc, docPanCard, docBankStatement, docRegistrationCert, errors]);
+  }, [panOrAadhaar, organizationName, accountNumber, accountHolderName, ifsc, docPanCard, docBankStatement, docRegistrationCert]);
 
   // Request permissions
   const requestPermissions = async () => {
@@ -282,8 +322,10 @@ export default function ProviderKycScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!isFormValid) {
-      Alert.alert("Incomplete Form", "Please complete all required fields correctly and attach all documents.");
+    setSubmitAttempted(true);
+    const ok = validateAllFields();
+    if (!ok) {
+      Alert.alert("Fix issues", "Please fix highlighted fields and attach required documents.");
       return;
     }
 
@@ -439,8 +481,13 @@ export default function ProviderKycScreen() {
             label="Account Holder Name *"
             placeholder="Enter account holder name"
             value={accountHolderName}
-            onChangeText={setAccountHolderName}
+            onChangeText={(text) => {
+              setAccountHolderName(text);
+              validateField('accountHolderName', text);
+            }}
             autoCapitalize="words"
+            onBlur={() => validateField('accountHolderName', accountHolderName)}
+            error={errors.accountHolderName}
           />
           
           <TextInput
@@ -475,6 +522,9 @@ export default function ProviderKycScreen() {
         {/* Documents */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Upload Documents *</Text>
+          {submitAttempted && (!docPanCard || !docBankStatement || !docRegistrationCert) && (
+            <Text style={styles.errorText}>Please attach PAN card, bank statement, and registration certificate.</Text>
+          )}
           
           {renderDocumentCard(
             "PAN Card",
@@ -505,7 +555,7 @@ export default function ProviderKycScreen() {
               title={submitting ? "Submitting..." : "Submit for Verification"} 
               onPress={handleSubmit} 
               loading={submitting}
-              disabled={submitting} 
+              disabled={submitting || !isFormValid} 
             />
           ) : (
             <View style={styles.infoBox}>
@@ -688,5 +738,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#6B7280",
     lineHeight: 20,
+  },
+  errorText: {
+    color: "#EF4444",
+    fontSize: 13,
+    marginBottom: 8,
+    fontWeight: "600",
   },
 });

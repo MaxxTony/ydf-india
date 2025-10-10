@@ -221,14 +221,7 @@ export default function ProviderSettingsScreen() {
           </SettingCard>
         </View>
 
-        {/* Danger Zone */}
-        <View style={styles.section}>
-          <TouchableOpacity style={styles.logoutButton} activeOpacity={0.7} onPress={confirmLogout}>
-            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-            <Text style={styles.logoutText}>Sign Out</Text>
-          </TouchableOpacity>
-        </View>
-
+       
         <Text style={styles.version}>App Version 1.0.0</Text>
         <View style={styles.bottomPadding} />
       </ScrollView>
