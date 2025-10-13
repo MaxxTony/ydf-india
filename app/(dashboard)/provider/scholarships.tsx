@@ -136,13 +136,13 @@ export default function ProviderScholarshipsScreen() {
             </TouchableOpacity>
           )}
         </View>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.addButton}
           activeOpacity={0.85}
           onPress={() => router.push("/(dashboard)/provider/add-scholarship")}
         >
           <Ionicons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       {/* Filter Tabs */}

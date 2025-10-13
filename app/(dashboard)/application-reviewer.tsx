@@ -213,7 +213,7 @@ export default function ApplicationReviewerDashboard() {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.featureCard, { borderLeftColor: "#4CAF50" }]} activeOpacity={0.8} onPress={() => router.push("/(dashboard)/reviewer/reports") }>
+            {/* <TouchableOpacity style={[styles.featureCard, { borderLeftColor: "#4CAF50" }]} activeOpacity={0.8} onPress={() => router.push("/(dashboard)/reviewer/reports") }>
               <View style={styles.featureContent}>
                 <View style={[styles.featureIcon, { backgroundColor: "#4CAF5020" }]}>
                   <Ionicons name="stats-chart-outline" size={24} color="#4CAF50" />
@@ -224,7 +224,7 @@ export default function ApplicationReviewerDashboard() {
                 </View>
                 <Ionicons name="chevron-forward" size={16} color="#666" />
               </View>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         </View>
       </ScrollView>

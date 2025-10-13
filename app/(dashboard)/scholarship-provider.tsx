@@ -196,7 +196,7 @@ export default function ScholarshipProviderDashboard() {
         <View style={styles.featuresContainer}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.featuresGrid}>
-            <TouchableOpacity style={[styles.featureCard, { borderLeftColor: "#4CAF50" }]} activeOpacity={0.8} onPress={() => router.push("/(dashboard)/provider/add-scholarship") }>
+            {/* <TouchableOpacity style={[styles.featureCard, { borderLeftColor: "#4CAF50" }]} activeOpacity={0.8} onPress={() => router.push("/(dashboard)/provider/add-scholarship") }>
               <View style={styles.featureContent}>
                 <View style={[styles.featureIcon, { backgroundColor: "#4CAF5020" }]}>
                   <Ionicons name="add-circle-outline" size={24} color="#4CAF50" />
@@ -207,7 +207,7 @@ export default function ScholarshipProviderDashboard() {
                 </View>
                 <Ionicons name="chevron-forward" size={16} color="#666" />
               </View>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             <TouchableOpacity style={[styles.featureCard, { borderLeftColor: "#2196F3" }]} activeOpacity={0.8} onPress={() => router.push("/(dashboard)/provider/applicants") }>
               <View style={styles.featureContent}>
@@ -234,7 +234,7 @@ export default function ScholarshipProviderDashboard() {
                 <Ionicons name="chevron-forward" size={16} color="#666" />
               </View>
             </TouchableOpacity>
-
+{/* 
             <TouchableOpacity style={[styles.featureCard, { borderLeftColor: "#9C27B0" }]} activeOpacity={0.8} onPress={() => router.push("/(dashboard)/provider/reports") }>
               <View style={styles.featureContent}>
                 <View style={[styles.featureIcon, { backgroundColor: "#9C27B020" }]}>
@@ -246,7 +246,7 @@ export default function ScholarshipProviderDashboard() {
                 </View>
                 <Ionicons name="chevron-forward" size={16} color="#666" />
               </View>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         </View>
       </ScrollView>
