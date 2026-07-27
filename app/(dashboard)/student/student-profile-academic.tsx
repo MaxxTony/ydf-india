@@ -912,16 +912,8 @@ export default function StudentProfileAcademicScreen() {
           <DateTimePickerModal
             isVisible={showStartDatePicker}
             mode="date"
-            minimumDate={
-              isSchoolCourse(editingRecord.currentCourse)
-                ? today
-                : new Date(2000, 0, 1)
-            }
-            maximumDate={
-              isSchoolCourse(editingRecord.currentCourse)
-                ? new Date(currentYear + 1, 11, 31)
-                : new Date(2035, 11, 31)
-            }
+            minimumDate={new Date(1990, 0, 1)}
+            maximumDate={new Date(2040, 11, 31)}
             onConfirm={(date) => {
               handleFieldChange("year", date.toISOString().split('T')[0]);
               setShowStartDatePicker(false);
@@ -936,7 +928,7 @@ export default function StudentProfileAcademicScreen() {
           <DateTimePickerModal
             isVisible={showEndDatePicker}
             mode="date"
-            minimumDate={today}
+            minimumDate={new Date(1990, 0, 1)}
             maximumDate={new Date(2040, 11, 31)}
             onConfirm={(date) => {
               handleFieldChange("graduation", date.toISOString().split('T')[0]);

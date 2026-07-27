@@ -579,6 +579,16 @@ export default function MobilizerProfilePersonalScreen() {
             const response = await updateUserProfile(authData.token, payload);
 
             if (response.success) {
+                try {
+                    const freshProfileRes = await getUserProfile(authData.token);
+                    if (freshProfileRes.success && freshProfileRes.data?.user) {
+                        authData.user = { ...authData.user, ...freshProfileRes.data.user };
+                        await AsyncStorage.setItem("authData", JSON.stringify(authData));
+                    }
+                } catch (e) {
+                    console.error("Failed to update cached authData after profile save", e);
+                }
+
                 setHasUnsavedChanges(false);
                 setToastMessage("Personal information updated successfully");
                 setToastType("success");

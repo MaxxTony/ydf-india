@@ -52,9 +52,21 @@ const CircularProgress = ({ size = 52, strokeWidth = 5, percentage = 0, color = 
   );
 };
 
-const stripHtml = (html: string): string => {
+const cleanScholarshipHtml = (html: string): string => {
   if (!html) return "";
   return html
+    .replace(/<button[^>]*>[\s\S]*?<\/button>/gi, "")
+    .replace(/<([a-z1-6]+)[^>]*>\s*(?:Close|close|x|X|×|&times;|&#215;|\&#x00d7;)\s*<\/\1>/gi, "")
+    .replace(/<([a-z1-6]+)[^>]*>\s*<([a-z1-6]+)[^>]*>\s*(?:Close|close|x|X|×|&times;|&#215;|\&#x00d7;)\s*<\/\2>\s*<\/\1>/gi, "")
+    .replace(/(?:<br\s*\/?>|\n|\r)?\s*\b(?:Close|close)\b\s*(?=<|$)/gi, "")
+    .replace(/(?:<br\s*\/?>|\n|\r)\s*(?:x|X|×|&times;|&#215;)\s*(?=<|$)/g, "")
+    .trim();
+};
+
+const stripHtml = (html: string): string => {
+  if (!html) return "";
+  const cleaned = cleanScholarshipHtml(html);
+  return cleaned
     .replace(/<[^>]*>/g, "")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
@@ -631,7 +643,7 @@ export default function ScholarshipDetailsScreen() {
             <View style={[styles.contentCard, { backgroundColor: isDark ? "#1e1e1e" : "#FFF", borderColor: isDark ? "#333" : "#E5E7EB" }]}>
               <RenderHTML
                 contentWidth={width - 72}
-                source={{ html: scholarship.description }}
+                source={{ html: cleanScholarshipHtml(scholarship.description) }}
                 tagsStyles={tagsStyles}
               />
             </View>
@@ -645,7 +657,7 @@ export default function ScholarshipDetailsScreen() {
             <View style={[styles.contentCard, { backgroundColor: isDark ? "#1e1e1e" : "#FFF", borderColor: isDark ? "#333" : "#E5E7EB" }]}>
               <RenderHTML
                 contentWidth={width - 72}
-                source={{ html: scholarship.eligibility_criteria }}
+                source={{ html: cleanScholarshipHtml(scholarship.eligibility_criteria) }}
                 tagsStyles={tagsStyles}
               />
             </View>

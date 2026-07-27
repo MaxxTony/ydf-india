@@ -15,10 +15,19 @@ import {
     Text,
     TouchableOpacity,
     View,
+    NativeModules,
 } from "react-native";
-import RNBlobUtil from "react-native-blob-util";
-import Pdf from "react-native-pdf";
+import WebView from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+let SafePdfComponent: any = null;
+try {
+    if (NativeModules.RNPDFView || NativeModules.RNBlobUtil) {
+        SafePdfComponent = require("react-native-pdf").default;
+    }
+} catch (e) {
+    console.warn("Native PDF module not available:", e);
+}
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -420,33 +429,58 @@ export default function StudentFileViewer() {
     );
 
     // ─── Render: PDF ────────────────────────────────────────────────────────────
-    const renderPDF = () => (
-        <View style={{ flex: 1 }}>
-            <Pdf
-                source={{ uri: `file://${localPath}`, cache: true }}
-                style={[styles.pdf, { backgroundColor: isDark ? "#0f0f0f" : "#F1F3F5" }]}
-                trustAllCerts={true}
-                onError={(err) => {
-                    console.error("PDF error:", err);
-                    setError("Could not render PDF. Try opening with another app.");
-                    setState("error");
-                }}
-                onLoadComplete={(pages) => console.log(`PDF: ${pages} pages`)}
-                enablePaging
-                horizontal={false}
-                fitPolicy={0}
-                spacing={8}
-                renderActivityIndicator={() => (
-                    <View style={styles.centerContainer}>
-                        <ActivityIndicator size="large" color={colors.primary} />
-                        <Text style={[styles.pdfLoadingText, { color: colors.textSecondary }]}>
-                            Rendering PDF…
-                        </Text>
-                    </View>
-                )}
-            />
-        </View>
-    );
+    const renderPDF = () => {
+        const fileUri = localPath ? `file://${localPath}` : (url || "");
+        if (SafePdfComponent) {
+            return (
+                <View style={{ flex: 1 }}>
+                    <SafePdfComponent
+                        source={{ uri: fileUri, cache: true }}
+                        style={[styles.pdf, { backgroundColor: isDark ? "#0f0f0f" : "#F1F3F5" }]}
+                        trustAllCerts={true}
+                        onError={(err: any) => {
+                            console.error("PDF error:", err);
+                            setError("Could not render PDF. Try opening with another app.");
+                            setState("error");
+                        }}
+                        onLoadComplete={(pages: any) => console.log(`PDF: ${pages} pages`)}
+                        enablePaging
+                        horizontal={false}
+                        fitPolicy={0}
+                        spacing={8}
+                        renderActivityIndicator={() => (
+                            <View style={styles.centerContainer}>
+                                <ActivityIndicator size="large" color={colors.primary} />
+                                <Text style={[styles.pdfLoadingText, { color: colors.textSecondary }]}>
+                                    Rendering PDF…
+                                </Text>
+                            </View>
+                        )}
+                    />
+                </View>
+            );
+        }
+
+        const displayUrl = url ? url.toString() : fileUri;
+        const googleViewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(displayUrl)}`;
+        return (
+            <View style={{ flex: 1 }}>
+                <WebView
+                    source={{ uri: googleViewerUrl }}
+                    style={[styles.pdf, { backgroundColor: isDark ? "#0f0f0f" : "#F1F3F5" }]}
+                    startInLoadingState={true}
+                    renderLoading={() => (
+                        <View style={styles.centerContainer}>
+                            <ActivityIndicator size="large" color={colors.primary} />
+                            <Text style={[styles.pdfLoadingText, { color: colors.textSecondary }]}>
+                                Rendering PDF…
+                            </Text>
+                        </View>
+                    )}
+                />
+            </View>
+        );
+    };
 
     // ─── Render: Generic / Unsupported ─────────────────────────────────────────
     const renderGeneric = () => (

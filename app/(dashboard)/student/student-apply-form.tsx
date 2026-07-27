@@ -328,6 +328,10 @@ export default function ApplyFormScreen() {
         if (response.success && response.data) {
           const user = response.data.user;
           if (user) {
+            // Update cached authData in AsyncStorage
+            authData.user = { ...authData.user, ...user };
+            await AsyncStorage.setItem("authData", JSON.stringify(authData));
+
             const getField = (shortname: string) =>
               user.customfields?.find((f: any) => f.shortname.toLowerCase().trim() === shortname.toLowerCase().trim())?.value || "";
 
@@ -347,10 +351,18 @@ export default function ApplyFormScreen() {
               studentId: user.portalid ? String(user.portalid) : (user.portalId ? String(user.portalId) : (user.username || getField('student_id') || "")),
             };
 
-
+            const familyIncomeVal =
+              user.annualincome ||
+              user.annual_income ||
+              getField('Family_income') ||
+              getField('family_income') ||
+              getField('annualincome') ||
+              getField('family_annual_income') ||
+              getField('income') ||
+              "";
 
             const financialPrefill = {
-              financial: getField('Family_income') || user.annual_income || "",
+              financial: familyIncomeVal,
             };
 
             const prefilledValues = {
@@ -358,11 +370,11 @@ export default function ApplyFormScreen() {
               ...financialPrefill,
             };
 
-
             // Detect if financial info exists in profile to allow proceeding to step 3
             const isFinancialFilled = !!prefilledValues.financial &&
               prefilledValues.financial !== "Select" &&
-              prefilledValues.financial !== "0";
+              prefilledValues.financial !== "0" &&
+              prefilledValues.financial.trim() !== "";
 
             setIsFinancialFromProfile(isFinancialFilled);
 
@@ -461,37 +473,67 @@ export default function ApplyFormScreen() {
     }
   }, [userId, scholarshipId, getValues]);
 
-  // Re-fetch academic details when returning from academic profile page (if no data yet)
+  // Re-fetch profile and academic details when screen gains focus (e.g. returning from editing profile)
   useFocusEffect(
     useCallback(() => {
-      if (loading || academicFetchedRef.current) return;
-      const refetch = async () => {
-        setLoadingAcademicDetails(true);
+      if (loading) return;
+      const refetchOnFocus = async () => {
         try {
           const authDataStr = await AsyncStorage.getItem("authData");
           if (!authDataStr) return;
-          const { token } = JSON.parse(authDataStr);
+          const authData = JSON.parse(authDataStr);
+          const token = authData?.token;
           if (!token) return;
-          const res = await getAcademicDetails(token);
-          if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-            setAcademicDetailsList(res.data);
-            academicFetchedRef.current = true;
 
-            // Auto-fill if form is empty (e.g. returning from profile after adding first record)
-            const firstItem = res.data[0];
-            const currentValues = getValues();
-            if (!currentValues.institution && !currentValues.major) {
-              fillAcademicFromItem(firstItem);
+          // Re-fetch user profile to pick up any edits user saved
+          const profRes = await getUserProfile(token);
+          if (profRes.success && profRes.data?.user) {
+            const user = profRes.data.user;
+            authData.user = { ...authData.user, ...user };
+            await AsyncStorage.setItem("authData", JSON.stringify(authData));
+
+            const getField = (shortname: string) =>
+              user.customfields?.find((f: any) => f.shortname.toLowerCase().trim() === shortname.toLowerCase().trim())?.value || "";
+
+            const familyIncomeVal =
+              user.annualincome ||
+              user.annual_income ||
+              getField('Family_income') ||
+              getField('family_income') ||
+              getField('annualincome') ||
+              getField('family_annual_income') ||
+              getField('income') ||
+              "";
+
+            const isFilled = !!familyIncomeVal && familyIncomeVal !== "Select" && familyIncomeVal !== "0" && familyIncomeVal.trim() !== "";
+            setIsFinancialFromProfile(isFilled);
+            if (isFilled) {
+              setValue("financial", familyIncomeVal);
+            }
+          }
+
+          if (!academicFetchedRef.current) {
+            setLoadingAcademicDetails(true);
+            const res = await getAcademicDetails(token);
+            if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+              setAcademicDetailsList(res.data);
+              academicFetchedRef.current = true;
+
+              const firstItem = res.data[0];
+              const currentValues = getValues();
+              if (!currentValues.institution && !currentValues.major) {
+                fillAcademicFromItem(firstItem);
+              }
             }
           }
         } catch (e) {
-          console.error("Academic re-fetch error", e);
+          console.error("Focus re-fetch error", e);
         } finally {
           setLoadingAcademicDetails(false);
         }
       };
-      refetch();
-    }, [loading])
+      refetchOnFocus();
+    }, [loading, setValue, getValues])
   );
 
   const next = useCallback(async () => {
@@ -1010,7 +1052,7 @@ export default function ApplyFormScreen() {
                           visible: true,
                           field: "currentYear",
                           currentDate: initialDate,
-                          minimumDate: today,
+                          minimumDate: new Date(1990, 0, 1),
                         });
                       }}>
                       <View pointerEvents="none">
@@ -1041,13 +1083,11 @@ export default function ApplyFormScreen() {
                               initialDate = parsedDate;
                             }
                           }
-                          const today = new Date();
-                          today.setHours(0, 0, 0, 0);
                           setDatePickerState({
                             visible: true,
                             field: "gradDate",
                             currentDate: initialDate,
-                            minimumDate: today,
+                            minimumDate: new Date(1990, 0, 1),
                           });
                         }}>
                         <View pointerEvents="none">
@@ -1361,7 +1401,7 @@ export default function ApplyFormScreen() {
         isVisible={datePickerState.visible}
         mode="date"
         date={datePickerState.currentDate}
-        minimumDate={datePickerState.minimumDate || new Date(2000, 0, 1)}
+        minimumDate={datePickerState.minimumDate || new Date(1990, 0, 1)}
         maximumDate={new Date(2040, 11, 31)}
         onConfirm={(date) => {
           const formatted = date.toISOString().split('T')[0];

@@ -311,7 +311,7 @@ export default function MobilizerApplyFormScreen() {
                                         return String(val).substring(0, 4);
                                     })(),
                                     gpa: String(v(studentData.gpa, cf.percentage_12, cf["10th"], studentData.academic_details?.[0]?.cgpa)),
-                                    financial: v(cf.Family_income, cf.annual_income),
+                                    financial: v(cf.Family_income, cf.family_income, cf.annualincome, cf.annual_income, cf.family_annual_income, cf.income),
                                 });
                             } else {
                                 Alert.alert("Error", "Failed to load student details");

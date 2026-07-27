@@ -17,11 +17,21 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
+    NativeModules
 } from "react-native";
-import Pdf from 'react-native-pdf';
+import WebView from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ReviewerHeader } from "../../../components";
+
+let SafePdfComponent: any = null;
+try {
+    if (NativeModules.RNPDFView || NativeModules.RNBlobUtil) {
+        SafePdfComponent = require('react-native-pdf').default;
+    }
+} catch (e) {
+    console.warn("Native PDF module not available:", e);
+}
 
 const { width } = Dimensions.get("window");
 
@@ -285,24 +295,43 @@ export default function DocumentViewScreen() {
         }
 
         if (isPdf) {
+            const pdfUrl = url.toString();
+            if (SafePdfComponent) {
+                return (
+                    <View style={[styles.documentCard, { borderColor: colors.border, backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF" }]}>
+                        <SafePdfComponent
+                            source={{ uri: pdfUrl, cache: true }}
+                            style={styles.pdfViewer}
+                            trustAllCerts={false}
+                            onLoadComplete={() => setLoading(false)}
+                            onError={(error: any) => {
+                                console.log("PDF error: ", error);
+                                setLoading(false);
+                                setLoadError(true);
+                            }}
+                        />
+                        {loading && (
+                            <View style={styles.loaderOverlay}>
+                                <ActivityIndicator size="large" color={colors.primary} />
+                            </View>
+                        )}
+                    </View>
+                );
+            }
+
+            const googleViewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(pdfUrl)}`;
             return (
                 <View style={[styles.documentCard, { borderColor: colors.border, backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF" }]}>
-                    <Pdf
-                        source={{ uri: url.toString(), cache: true }}
+                    <WebView
+                        source={{ uri: googleViewerUrl }}
                         style={styles.pdfViewer}
-                        trustAllCerts={false}
-                        onLoadComplete={() => setLoading(false)}
-                        onError={(error) => {
-                            console.log("PDF error: ", error);
+                        startInLoadingState={true}
+                        onLoadEnd={() => setLoading(false)}
+                        onError={() => {
                             setLoading(false);
                             setLoadError(true);
                         }}
                     />
-                    {loading && (
-                        <View style={styles.loaderOverlay}>
-                            <ActivityIndicator size="large" color={colors.primary} />
-                        </View>
-                    )}
                 </View>
             );
         }

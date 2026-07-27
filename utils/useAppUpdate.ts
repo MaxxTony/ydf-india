@@ -1,12 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppState, Linking, Platform } from "react-native";
-import DeviceInfo from "react-native-device-info";
-import SpInAppUpdates, {
-  IAUUpdateKind,
-  type StartUpdateOptions,
-} from "sp-react-native-in-app-updates";
+import { AppState, Linking, NativeModules, Platform } from "react-native";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const DISMISS_KEY = "app_update_dismissed";
@@ -15,8 +10,30 @@ const DISMISS_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 const ANDROID_PACKAGE = Constants.expoConfig?.android?.package || "com.YDF";
 const IOS_BUNDLE_ID = Constants.expoConfig?.ios?.bundleIdentifier || "com.YDF";
 
-// Initialize the in-app updates instance
-const inAppUpdates = new SpInAppUpdates(false); // false = don't show debug logs
+// Helper to safely obtain SpInAppUpdates instance without throwing top-level NativeEventEmitter errors
+let inAppUpdatesInstance: any = null;
+
+const getInAppUpdates = () => {
+  if (inAppUpdatesInstance) return inAppUpdatesInstance;
+
+  // Check if native module is present in NativeModules bridge before calling constructor
+  const hasNativeModule = !!(NativeModules && (NativeModules.SpInAppUpdates || NativeModules.InAppUpdates));
+  if (!hasNativeModule) {
+    return null;
+  }
+
+  try {
+    const SpInAppUpdatesModule = require("sp-react-native-in-app-updates");
+    const SpInAppUpdatesClass = SpInAppUpdatesModule?.default || SpInAppUpdatesModule;
+    if (SpInAppUpdatesClass) {
+      inAppUpdatesInstance = new SpInAppUpdatesClass(false);
+      return inAppUpdatesInstance;
+    }
+  } catch (err) {
+    console.warn("[useAppUpdate] SpInAppUpdates native module not available:", err);
+  }
+  return null;
+};
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export type UpdateType = "store" | null;
@@ -56,9 +73,10 @@ export function useAppUpdate(autoCheck: boolean = true): AppUpdateState {
   const [showModal, setShowModal] = useState(false);
   const hasCheckedRef = useRef(false);
 
-  const appVersion = Platform.OS === "android" 
-    ? DeviceInfo.getBuildNumber() 
-    : Constants.expoConfig?.version || "1.0.0";
+  const appVersion =
+    Constants.nativeAppVersion ||
+    Constants.expoConfig?.version ||
+    "1.0.0";
 
   // ── Check if update was recently dismissed ─────────────────────────────
   const wasDismissedRecently = useCallback(async (): Promise<boolean> => {
@@ -83,6 +101,13 @@ export function useAppUpdate(autoCheck: boolean = true): AppUpdateState {
     setError(null);
 
     try {
+      const inAppUpdates = getInAppUpdates();
+      if (!inAppUpdates) {
+        console.log("[useAppUpdate] In-app updates not supported in this environment");
+        setIsChecking(false);
+        return "up-to-date";
+      }
+
       const result = await inAppUpdates.checkNeedsUpdate();
 
       console.log("[useAppUpdate] Check result:", JSON.stringify(result));
@@ -120,18 +145,20 @@ export function useAppUpdate(autoCheck: boolean = true): AppUpdateState {
   const applyUpdate = useCallback(async () => {
     try {
       setShowModal(false);
+      const inAppUpdates = getInAppUpdates();
 
-      if (Platform.OS === "android") {
-        // Use Google Play's native In-App Update dialog
-        // IAUUpdateKind.IMMEDIATE = full screen blocking update (like Zomato)
-        // IAUUpdateKind.FLEXIBLE = background download with banner
-        const updateOptions: StartUpdateOptions = {
-          updateType: IAUUpdateKind.IMMEDIATE,
-        };
+      if (Platform.OS === "android" && inAppUpdates) {
+        let updateKind = 0; // IAUUpdateKind.IMMEDIATE
+        try {
+          const mod = require("sp-react-native-in-app-updates");
+          if (mod?.IAUUpdateKind?.IMMEDIATE !== undefined) {
+            updateKind = mod.IAUUpdateKind.IMMEDIATE;
+          }
+        } catch {}
 
-        await inAppUpdates.startUpdate(updateOptions);
+        await inAppUpdates.startUpdate({ updateType: updateKind });
       } else {
-        // iOS: Open App Store page
+        // iOS or fallback: Open App Store page
         openStorePage();
       }
     } catch (updateError: any) {

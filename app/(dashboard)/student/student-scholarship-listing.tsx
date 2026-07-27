@@ -1,7 +1,7 @@
 import { AppHeader, SearchBar, ScholarshipFilterModal, FilterState, DEFAULT_FILTERS, countActiveFilters } from "@/components";
 import Toast from "@/components/Toast";
 import { useTheme } from "@/context/ThemeContext";
-import { bookmarkScholarship, getAllScholarships, getDropdownDefinitions, DropdownData } from "@/utils/api";
+import { bookmarkScholarship, getAllScholarships, getDropdownDefinitions, DropdownData, getUserProfile } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
@@ -143,6 +143,14 @@ export default function ScholarshipListingScreen() {
       const authData = JSON.parse(authDataString);
       const token = authData?.token;
       if (!token) { setLoading(false); return; }
+
+      // Also refresh user profile in background to keep local profile cache fresh
+      getUserProfile(token).then((profileRes) => {
+        if (profileRes.success && profileRes.data?.user) {
+          authData.user = { ...authData.user, ...profileRes.data.user };
+          AsyncStorage.setItem("authData", JSON.stringify(authData)).catch(() => {});
+        }
+      }).catch(() => {});
 
       const response = await getAllScholarships(token, {
         search: searchQuery || undefined,

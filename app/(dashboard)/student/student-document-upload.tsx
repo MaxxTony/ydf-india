@@ -24,10 +24,20 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  NativeModules
 } from "react-native";
-import Pdf from "react-native-pdf";
+import WebView from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+let SafePdfComponent: any = null;
+try {
+  if (NativeModules.RNPDFView || NativeModules.RNBlobUtil) {
+    SafePdfComponent = require("react-native-pdf").default;
+  }
+} catch (e) {
+  console.warn("Native PDF module not available:", e);
+}
 
 
 
@@ -685,7 +695,14 @@ export default function DocumentUploadScreen() {
             ) : (
               <View style={[styles.previewBody, { backgroundColor: isDark ? "#101114" : "#F5F6FA" }]}>
                 <View style={[styles.previewCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <Pdf source={{ uri: previewFile.uri }} style={styles.previewPdf} />
+                  {SafePdfComponent ? (
+                    <SafePdfComponent source={{ uri: previewFile.uri }} style={styles.previewPdf} />
+                  ) : (
+                    <WebView
+                      source={{ uri: previewFile.uri.startsWith('http') ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(previewFile.uri)}` : previewFile.uri }}
+                      style={styles.previewPdf}
+                    />
+                  )}
                 </View>
               </View>
             )

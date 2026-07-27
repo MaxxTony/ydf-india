@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.YDF",
-      "buildNumber": "81",
+      "buildNumber": "82",
       "supportsTablet": true,
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to capture documents."
@@ -31,7 +31,7 @@
         "android.permission.WRITE_CALENDAR"
       ],
       "package": "com.YDF",
-      "versionCode": 81,
+      "versionCode": 82,
       "googleServicesFile": "./google-services.json"
     },
     "web": {
