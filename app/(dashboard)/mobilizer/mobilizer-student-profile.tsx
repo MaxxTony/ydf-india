@@ -329,10 +329,52 @@ export default function MobilizerStudentProfileScreen() {
             return defaultVal || cf[keys[0]];
         };
 
-        return [
+        const usedKeys = new Set([
+            "Gender", "gender", "DOB", "date_of_birth", "date_of_birth_in_aadhar_card",
+            "Religion", "religion", "Caste", "caste", "cast_in_the_caste_certificate",
+            "category", "Category", "Caste_Category", "father", "father_name", "mother",
+            "mother_name", "Family_income", "income_in_income_certificate", "income",
+            "mobile", "phone_number", "whatsapp_number", "city", "City", "district",
+            "domicile_district", "domicile_place_in_domicile", "College_District",
+            "State", "state", "State_Name", "Village", "village", "area", "address",
+            "course", "course_name_1", "current_course_in_fee_receipt", "stream_in_12th",
+            "course_stream_1", "university", "college_name", "college_university_name_1",
+            "current_institute_name_in_fee_receipt", "grade_in_cgpa_1", "cgpa",
+            "grade_in_percentage_1", "percentage", "session", "academic_session",
+            "year_of_course", "current_course_year_in_fee_receipt",
+            "expected_academic_end_date_1", "graduation_year", "stem_non_stem",
+            "course_category_1", "12th_board", "board_12", "12th_passing_year",
+            "percentage_12", "last_year_marksheet_percentage", "passing_10th",
+            "board_10", "10th", "percentage_10", "name_in_aadhar_card", "aadhar_name",
+            "aadhar_card", "idnumber", "aachar_card_number", "income_certificate",
+            "income_cert_no", "issue_date_of_income_certificate",
+            "issue_date_of_domicile_certificate", "Registering_as", "application_type",
+            "source", "how_did_you_hear", "department", "marks_10_type", "marks_12_type",
+            "marks_graduation_type"
+        ]);
+
+        const extraRows = Object.keys(cf)
+            .filter(key => !usedKeys.has(key) && cf[key] && String(cf[key]).trim() !== "" && !["select", "choose...", "0", "nan"].includes(String(cf[key]).toLowerCase().trim()))
+            .map(key => {
+                const humanLabel = key.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+                return {
+                    label: humanLabel,
+                    value: String(cf[key]).trim(),
+                    icon: "extension-puzzle-outline"
+                };
+            });
+
+        const rawIdNum = student.idnumber || cf.idnumber || cf.student_id || cf.application_no || cf.reg_no;
+        const studentIdDisplay = (rawIdNum && String(rawIdNum).trim() !== "")
+            ? String(rawIdNum).trim()
+            : ((student.id || studentId) ? (String(student.id || studentId).startsWith("YDFADM") ? String(student.id || studentId) : `YDFADM${student.id || studentId}`) : "");
+
+        const list = [
             {
+                tabId: "personal",
                 icon: "person-circle-outline", iconColor: "#6366F1", title: "Personal Details",
                 rows: [
+                    { label: "Student ID", value: studentIdDisplay, icon: "id-card-outline" },
                     { label: "Full Name", value: student.fullname, icon: "person-outline" },
                     { label: "Username", value: student.username, icon: "at-outline" },
                     { label: "Gender", value: flbk(["Gender", "gender"]), icon: "transgender-outline" },
@@ -346,6 +388,7 @@ export default function MobilizerStudentProfileScreen() {
                 ],
             },
             {
+                tabId: "personal",
                 icon: "call-outline", iconColor: "#10B981", title: "Contact Information",
                 rows: [
                     { label: "Primary Phone", value: student.phone1, icon: "call-outline", action: () => handleCall(student.phone1), actionIcon: "call" },
@@ -359,6 +402,7 @@ export default function MobilizerStudentProfileScreen() {
                 ],
             },
             {
+                tabId: "academic",
                 icon: "school-outline", iconColor: "#F59E0B", title: "Current Education",
                 rows: [
                     { label: "Course Name", value: ad.course_name || flbk(["course", "course_name_1", "current_course_in_fee_receipt"]), icon: "school-outline" },
@@ -373,6 +417,7 @@ export default function MobilizerStudentProfileScreen() {
                 ],
             },
             {
+                tabId: "academic",
                 icon: "library-outline", iconColor: "#EC4899", title: "Education History",
                 rows: [
                     { label: "12th Board", value: flbk(["12th_board", "board_12"]), icon: "library-outline" },
@@ -384,6 +429,19 @@ export default function MobilizerStudentProfileScreen() {
                 ],
             },
             {
+                tabId: "financial",
+                icon: "cash-outline", iconColor: "#10B981", title: "Financial & Bank Details",
+                rows: [
+                    { label: "Bank Name", value: flbk(["bank_name", "bankName"]), icon: "business-outline" },
+                    { label: "Account Holder", value: flbk(["accountholder", "account_holder_name", "accountHolderName"]), icon: "person-outline" },
+                    { label: "Account Number", value: flbk(["account_number", "bank_account_no", "bankAccountNo"]), icon: "card-outline" },
+                    { label: "IFSC Code", value: flbk(["ifsc", "ifsc_code", "ifscCode"]), icon: "barcode-outline" },
+                    { label: "Account Type", value: flbk(["account_type", "accountType"]), icon: "wallet-outline" },
+                    { label: "Family Income", value: flbk(["Family_income", "income_in_income_certificate", "income"]), icon: "cash-outline" },
+                ],
+            },
+            {
+                tabId: "documents",
                 icon: "card-outline", iconColor: "#3B82F6", title: "Documents & Registry",
                 rows: [
                     { label: "Aadhar Name", value: flbk(["name_in_aadhar_card", "aadhar_name"]), icon: "person-circle-outline" },
@@ -399,7 +457,27 @@ export default function MobilizerStudentProfileScreen() {
                 ],
             },
         ];
+
+        if (extraRows.length > 0) {
+            list.push({
+                tabId: "documents",
+                icon: "extension-puzzle-outline",
+                iconColor: "#8B5CF6",
+                title: "Additional Profile Details",
+                rows: extraRows,
+            });
+        }
+
+        return list;
     }, [student]);
+
+    const PROFILE_TABS = [
+        { id: "personal", label: "Personal", icon: "person-outline", color: "#4CAF50" },
+        { id: "academic", label: "Academic", icon: "school-outline", color: "#2196F3" },
+        { id: "financial", label: "Financial", icon: "cash-outline", color: "#10B981" },
+        { id: "documents", label: "Documents", icon: "document-text-outline", color: "#FF9800" },
+    ];
+    const [activeTab, setActiveTab] = useState<"personal" | "academic" | "financial" | "documents">("personal");
 
     const bg = isDark ? "#0A0A0F" : "#F4F6FF";
 
@@ -576,9 +654,39 @@ export default function MobilizerStudentProfileScreen() {
                         studentName={student.fullname || `${student.firstname} ${student.lastname}`}
                     />
 
+                    {/* ── Navigation Tabs ── */}
+                    <View style={{ marginBottom: 16 }}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 2 }}>
+                            {PROFILE_TABS.map((tab) => {
+                                const isActive = activeTab === tab.id;
+                                return (
+                                    <TouchableOpacity
+                                        key={tab.id}
+                                        onPress={() => setActiveTab(tab.id as any)}
+                                        style={{
+                                            flexDirection: "row",
+                                            alignItems: "center",
+                                            gap: 8,
+                                            paddingHorizontal: 16,
+                                            paddingVertical: 10,
+                                            borderRadius: 20,
+                                            borderWidth: 1,
+                                            backgroundColor: isActive ? tab.color : (isDark ? "rgba(255,255,255,0.08)" : "#fff"),
+                                            borderColor: isActive ? tab.color : (isDark ? "rgba(255,255,255,0.15)" : "#E2E8F0"),
+                                        }}
+                                    >
+                                        <Ionicons name={tab.icon as any} size={16} color={isActive ? "#fff" : (isDark ? "#94A3B8" : "#64748B")} />
+                                        <Text style={{ fontSize: 13, color: isActive ? "#fff" : (isDark ? "#F1F5F9" : "#0F172A"), fontWeight: isActive ? "700" : "600", textTransform: "capitalize" }}>
+                                            {tab.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
 
-                    {/* ── Info sections ── */}
-                    {sections?.map((s) => (
+                    {/* ── Info sections (Filtered by active tab) ── */}
+                    {sections?.filter(s => (s as any).tabId === activeTab)?.map((s) => (
                         <SectionCard key={s.title} {...s} isDark={isDark} />
                     ))}
                 </ScrollView>

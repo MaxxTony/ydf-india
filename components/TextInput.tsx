@@ -87,6 +87,9 @@ export default function CustomTextInput({
         borderColor: isDark ? colors.border : 'rgba(51, 51, 51, 0.2)'
       }
     ];
+    if (multiline) {
+      baseStyle.push({ alignItems: 'flex-start', paddingTop: 10, paddingBottom: 10 });
+    }
     if (isFocused || focused) {
       baseStyle.push({
         borderColor: colors.primary,
@@ -134,7 +137,7 @@ export default function CustomTextInput({
             name={icon}
             size={20}
             color={iconColor || colors.textSecondary}
-            style={{ marginRight: 8 }}
+            style={[{ marginRight: 8 }, multiline && { marginTop: 2 }]}
           />
         )}
         {showPasswordToggle && togglePosition === 'left' && renderToggle()}
