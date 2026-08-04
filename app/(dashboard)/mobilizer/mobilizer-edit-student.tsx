@@ -1,7 +1,17 @@
 import { AppHeader, Button, CustomTextInput, Toast } from "@/components";
 import { useTheme } from "@/context/ThemeContext";
 
-import { DropdownData, getDropdownDefinitions, getMobilizerStudentProfile, updateMobilizerStudent, uploadProfileImage } from "@/utils/api";
+import {
+    createMobilizerStudentAcademicDetail,
+    deleteMobilizerStudentAcademicDetail,
+    DropdownData,
+    getDropdownDefinitions,
+    getMobilizerStudentAcademicDetails,
+    getMobilizerStudentProfile,
+    updateMobilizerStudent,
+    updateMobilizerStudentAcademicDetail,
+    uploadProfileImage,
+} from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -67,6 +77,23 @@ const formSchema = z.object({
     aadhar_number: z.string().optional(),
     income_cert_no: z.string().optional(),
     domicile_cert_no: z.string().optional(),
+    whatsapp_number: z.string().optional(),
+    village: z.string().optional(),
+    block: z.string().optional(),
+    district: z.string().optional(),
+    application_type: z.string().optional(),
+    scheme_name: z.string().optional(),
+    domicile_state: z.string().optional(),
+    category: z.string().optional(),
+    stream: z.string().optional(),
+    session: z.string().optional(),
+    passing_year_12: z.string().optional(),
+    competitive_exam_name: z.string().optional(),
+    registering_as: z.string().optional(),
+    board_10: z.string().optional(),
+    board_12: z.string().optional(),
+    stream_12: z.string().optional(),
+    competitive_exam: z.string().optional(),
 }).superRefine((data, ctx) => {
     const validCGPA = (s: string) => { const n = parseFloat(s); return !isNaN(n) && n >= 0 && n <= 10; };
     const validPct = (s: string) => { const n = parseFloat(s); return !isNaN(n) && n >= 0 && n <= 100; };
@@ -134,13 +161,24 @@ export default function MobilizerEditStudentScreen() {
     const GENDER_OPTIONS = getOptionsByShortname('gender').map((o: any) => o.label);
     const RELIGION_OPTIONS = getOptionsByShortname('religion').map((o: any) => o.label);
     const CASTE_OPTIONS = getOptionsByShortname('caste').map((o: any) => o.label);
-    const CATEGORY_OPTIONS = getOptionsByShortname('category').map((o: any) => o.label);
+    const SPECIAL_CATEGORY_OPTIONS = getOptionsByShortname('category').map((o: any) => o.label);
     const REGISTERING_AS_OPTIONS = getOptionsByShortname('Registering_as').map((o: any) => o.label);
     const ANNUAL_INCOME_OPTIONS = getOptionsByShortname('family_income').map((o: any) => o.label);
     const STATE_OPTIONS = getOptionsByShortname('state').map((o: any) => o.label);
     const DISTRICT_OPTIONS = getOptionsByShortname('district').map((o: any) => o.label);
-    const ACADEMIC_LEVEL_OPTIONS = getOptionsByShortname('academic_qualifications').map((o: any) => o.label);
-    const STREAM_OPTIONS = getOptionsByShortname('course_category_1').map((o: any) => o.label);
+
+    const ACADEMIC_LEVEL_OPTIONS = (getOptionsByShortname('course_name_1').length > 0
+        ? getOptionsByShortname('course_name_1')
+        : getOptionsByShortname('academic_qualifications')).map((o: any) => o.label);
+
+    const CATEGORY_OPTIONS = (getOptionsByShortname('course_category_1').length > 0
+        ? getOptionsByShortname('course_category_1')
+        : getOptionsByShortname('category')).map((o: any) => o.label);
+
+    const STREAM_OPTIONS = (getOptionsByShortname('course_stream_1').length > 0
+        ? getOptionsByShortname('course_stream_1')
+        : getOptionsByShortname('stream_in_12th')).map((o: any) => o.label);
+
     const YEAR_OPTIONS = getOptionsByShortname('year_of_course').map((o: any) => o.label);
     const SESSION_OPTIONS = getOptionsByShortname('session').map((o: any) => o.label);
     const SCHEME_OPTIONS = getOptionsByShortname('schemename').map((o: any) => o.label);
@@ -150,6 +188,17 @@ export default function MobilizerEditStudentScreen() {
     const PASSING_YEAR_12TH_OPTIONS = getOptionsByShortname('12th_passing_year').map((o: any) => o.label);
     const APPLICATION_TYPE_OPTIONS = getOptionsByShortname('application_type').map((o: any) => o.label);
     const COMPETITIVE_EXAM_OPTIONS = getOptionsByShortname('competitive_exam').map((o: any) => o.label);
+
+    const isSchoolCourse = (course: string) => {
+        if (!course) return false;
+        const schoolLevels = ["10th", "11th", "12th"];
+        return schoolLevels.some(level => course.toLowerCase().includes(level.toLowerCase()));
+    };
+
+    const is11th12thCourse = (course: string) => {
+        if (!course) return false;
+        return course.toLowerCase().includes("11th") || course.toLowerCase().includes("12th");
+    };
 
     const [loading, setLoading] = useState(false);
     const [studentName, setStudentName] = useState("");
@@ -161,6 +210,188 @@ export default function MobilizerEditStudentScreen() {
     const [docFile, setDocFile] = useState<{ uri: string; name: string; mimeType: string; size: number } | null>(null);
     const [docSaveAs, setDocSaveAs] = useState("");
     const [uploadedDocs, setUploadedDocs] = useState<{ name: string; size?: string; uri?: string }[]>([]);
+
+    // Mobilizer Student Academic Qualifications state
+    interface AcademicRecordItem {
+        id: string;
+        course_name: string;
+        category?: string;
+        institution?: string;
+        major?: string;
+        percentage?: string;
+        cgpa?: string;
+        academic_year?: string;
+        graduation_year?: string;
+    }
+
+    const [academicRecords, setAcademicRecords] = useState<AcademicRecordItem[]>([]);
+    const [academicLoading, setAcademicLoading] = useState<boolean>(false);
+    const [acadModalVisible, setAcadModalVisible] = useState<boolean>(false);
+    const [acadForm, setAcadForm] = useState({
+        id: "",
+        course_name: "",
+        category: "",
+        institution: "",
+        major: "",
+        percentage: "",
+        cgpa: "",
+        academic_year: "",
+        graduation_year: "",
+    });
+
+    const [acadPickerConfig, setAcadPickerConfig] = useState<{
+        visible: boolean;
+        title: string;
+        options: string[];
+        field: "course_name" | "category" | "major" | "academic_year" | "graduation_year" | null;
+    }>({
+        visible: false,
+        title: "",
+        options: [],
+        field: null,
+    });
+
+    const openAcadPicker = (field: "course_name" | "category" | "major" | "academic_year" | "graduation_year", title: string, options: string[]) => {
+        setAcadPickerConfig({ visible: true, title, options, field });
+    };
+
+    const handleAcadSelect = (value: string) => {
+        if (acadPickerConfig.field) {
+            setAcadForm((prev) => ({ ...prev, [acadPickerConfig.field!]: value }));
+        }
+        setAcadPickerConfig({ visible: false, title: "", options: [], field: null });
+    };
+
+    const fetchStudentAcademicDetails = async (numStudentId: number) => {
+        try {
+            setAcademicLoading(true);
+            const authDataStr = await AsyncStorage.getItem("authData");
+            if (authDataStr) {
+                const authData = JSON.parse(authDataStr);
+                if (authData.token) {
+                    const res = await getMobilizerStudentAcademicDetails(authData.token, numStudentId);
+                    if (res.success && Array.isArray(res.data)) {
+                        setAcademicRecords(res.data.map((item: any) => ({
+                            id: String(item.id),
+                            course_name: item.course_name || "",
+                            category: item.category || "",
+                            institution: item.institution || "",
+                            major: item.major || "",
+                            percentage: item.percentage !== null && item.percentage !== undefined ? String(item.percentage) : "",
+                            cgpa: item.cgpa || "",
+                            academic_year: item.academic_year || "",
+                            graduation_year: item.graduation_year ? String(item.graduation_year) : "",
+                        })));
+                    }
+                }
+            }
+        } catch (e) {
+            console.log("Failed to fetch student academic details:", e);
+        } finally {
+            setAcademicLoading(false);
+        }
+    };
+
+    const handleOpenAddAcademic = () => {
+        setAcadPickerConfig({ visible: false, title: "", options: [], field: null });
+        setAcadForm({
+            id: "",
+            course_name: "",
+            category: "",
+            institution: "",
+            major: "",
+            percentage: "",
+            cgpa: "",
+            academic_year: "",
+            graduation_year: "",
+        });
+        setAcadModalVisible(true);
+    };
+
+    const handleOpenEditAcademic = (record: AcademicRecordItem) => {
+        setAcadPickerConfig({ visible: false, title: "", options: [], field: null });
+        setAcadForm({
+            id: record.id,
+            course_name: record.course_name || "",
+            category: record.category || "",
+            institution: record.institution || "",
+            major: record.major || "",
+            percentage: record.percentage || "",
+            cgpa: record.cgpa || "",
+            academic_year: record.academic_year || "",
+            graduation_year: record.graduation_year || "",
+        });
+        setAcadModalVisible(true);
+    };
+
+    const handleSaveAcademicRecord = async () => {
+        if (!acadForm.course_name.trim()) {
+            Alert.alert("Error", "Course Name is required.");
+            return;
+        }
+        try {
+            const authDataStr = await AsyncStorage.getItem("authData");
+            if (!authDataStr) return;
+            const authData = JSON.parse(authDataStr);
+            const token = authData.token;
+            const numStudentId = Number(studentId);
+
+            const params = {
+                course_name: acadForm.course_name.trim(),
+                category: acadForm.category.trim() || undefined,
+                institution: acadForm.institution.trim() || undefined,
+                major: acadForm.major.trim() || undefined,
+                percentage: acadForm.percentage.trim() || undefined,
+                cgpa: acadForm.cgpa.trim() || undefined,
+                academic_year: acadForm.academic_year.trim() || undefined,
+                graduation_year: acadForm.graduation_year.trim() || undefined,
+            };
+
+            let res;
+            if (acadForm.id) {
+                res = await updateMobilizerStudentAcademicDetail(token, numStudentId, Number(acadForm.id), params);
+            } else {
+                res = await createMobilizerStudentAcademicDetail(token, numStudentId, params);
+            }
+
+            if (res.success) {
+                setToast({ visible: true, message: res.message || "Academic detail saved successfully!", type: "success" });
+                setAcadModalVisible(false);
+                fetchStudentAcademicDetails(numStudentId);
+            } else {
+                Alert.alert("Error", res.error || "Failed to save academic detail");
+            }
+        } catch (err: any) {
+            Alert.alert("Error", err.message || "An error occurred");
+        }
+    };
+
+    const handleDeleteAcademicRecord = (id: string) => {
+        Alert.alert("Delete Qualification", "Are you sure you want to delete this qualification?", [
+            { text: "Cancel", style: "cancel" },
+            {
+                text: "Delete",
+                style: "destructive",
+                onPress: async () => {
+                    try {
+                        const authDataStr = await AsyncStorage.getItem("authData");
+                        if (!authDataStr) return;
+                        const authData = JSON.parse(authDataStr);
+                        const numStudentId = Number(studentId);
+                        const res = await deleteMobilizerStudentAcademicDetail(authData.token, numStudentId, Number(id));
+                        if (res.success) {
+                            setToast({ visible: true, message: "Qualification deleted!", type: "success" });
+                            fetchStudentAcademicDetails(numStudentId);
+                        } else {
+                            Alert.alert("Error", res.error || "Failed to delete qualification");
+                        }
+                    } catch (e: any) {
+                        Alert.alert("Error", e.message || "Failed to delete qualification");
+                    }
+                }
+            }
+        ]);
+    };
 
     // DigiLocker Integration
     const { WebViewComponent, show: showWebView } = useDigiLockerWebView();
@@ -357,13 +588,22 @@ export default function MobilizerEditStudentScreen() {
                     else if (typeof d.custom_fields === 'object') cf = d.custom_fields;
                 } catch (e) { }
 
+                let finInfo: any = {};
+                try {
+                    if (typeof d.financial_info === 'string' && d.financial_info.trim() !== '') {
+                        finInfo = JSON.parse(d.financial_info);
+                    } else if (typeof d.financial_info === 'object' && d.financial_info !== null) {
+                        finInfo = d.financial_info;
+                    }
+                } catch (e) { }
+
                 const rawIdNum = d.idnumber || cf.idnumber || cf.student_id || cf.application_no || cf.reg_no;
                 if (rawIdNum && String(rawIdNum).trim() !== "") {
-                    setStudentIdCode(String(rawIdNum).trim());
+                    setStudentIdCode(String(rawIdNum).trim().toUpperCase());
                 } else {
                     const rawId = d.id || studentId;
                     if (rawId) {
-                        const s = String(rawId).trim();
+                        const s = String(rawId).trim().toUpperCase();
                         setStudentIdCode(s.startsWith("YDFADM") ? s : `YDFADM${s}`);
                     }
                 }
@@ -386,10 +626,13 @@ export default function MobilizerEditStudentScreen() {
                 else if (phoneStr.startsWith("+91")) phoneStr = phoneStr.substring(3);
                 setValue("phone1", phoneStr);
 
-                setValue("city", cleanVal(d.city || cf.city || cf.district));
-                setValue("state", cleanVal(cf.state || cf.State));
+                setValue("city", cleanVal(cf.district || cf.District || cf.College_District || cf.domicile_district || d.city));
+                setValue("district", cleanVal(cf.district || cf.District || cf.College_District || cf.domicile_district || d.city));
+                setValue("state", cleanVal(cf.state || cf.State || cf.domicile_state));
                 setValue("country", cleanVal(d.country) || "IN");
                 setValue("address", cleanVal(d.address || cf.address || cf.Village));
+                setValue("village", cleanVal(cf.village || cf.Village || d.address));
+                setValue("block", cleanVal(cf.block || cf.Block));
                 setValue("institution", cleanVal(d.institution || cf.college_name));
 
                 setValue("gender", cleanVal(cf.gender || cf.Gender));
@@ -414,49 +657,60 @@ export default function MobilizerEditStudentScreen() {
                 setValue("marks_12_type", cleanVal(cf.marks_12_type) || "cgpa");
                 setValue("marks_12_value", cleanVal(cf['12th_marks'] || cf.marks_12_value || cf.percentage_12));
                 setValue("graduation_type", cleanVal(cf.marks_graduation_type) || "cgpa");
-                setValue("graduation_value", cleanVal(cf.grade_in_cgpa_1 || cf.marks_graduation_value));
+                setValue("graduation_value", cleanVal(cf.grade_in_cgpa_1 || cf.grade_in_cgpa_2 || cf.marks_graduation_value));
 
                 setValue("father_name", cleanVal(cf.father_name || cf.father));
                 setValue("mother_name", cleanVal(cf.mother_name || cf.mother));
                 setValue("family_annual_income", cleanVal(cf.Family_income || cf.family_annual_income || cf.family_income));
 
-                setValue("bank_name", cleanVal(cf.bank_name || cf.bankName));
-                setValue("account_number", cleanVal(cf.account_number || cf.bank_account_no || cf.bankAccountNo));
-                setValue("ifsc", cleanVal(cf.ifsc || cf.ifsc_code || cf.ifscCode));
-                setValue("accountholder", cleanVal(cf.accountholder || cf.account_holder_name || cf.accountHolderName));
-                setValue("account_type", cleanVal(cf.account_type || cf.accountType));
+                setValue("bank_name", cleanVal(finInfo.bank_name || cf.bank_name || cf.bankName));
+                setValue("account_number", cleanVal(finInfo.account_number || finInfo.account_number_masked || cf.account_number || cf.bank_account_no || cf.bankAccountNo));
+                setValue("ifsc", cleanVal(finInfo.ifsc || cf.ifsc || cf.ifsc_code || cf.ifscCode));
+                setValue("accountholder", cleanVal(finInfo.accountholder || cf.accountholder || cf.account_holder_name || cf.accountHolderName));
+                let rawAccType = cleanVal(finInfo.account_type || cf.account_type || cf.accountType);
+                if (rawAccType) {
+                    const matched = ACCOUNT_TYPE_OPTIONS.find(opt => opt.toLowerCase() === rawAccType.toLowerCase());
+                    if (matched) rawAccType = matched;
+                }
+                setValue("account_type", rawAccType);
 
                 setValue("aadhar_number", cleanVal(cf.aadhar_card || cf.idnumber || cf.aachar_card_number));
                 setValue("income_cert_no", cleanVal(cf.income_certificate || cf.income_cert_no));
                 setValue("domicile_cert_no", cleanVal(cf.domicile_certificate || cf.domicile_cert_no));
 
-                // Populate dynamic unmapped custom fields
-                const BOUND_KEYS = new Set([
-                    "username", "firstname", "lastname", "email", "phone1", "city", "state", "country",
-                    "address", "institution", "gender", "religion", "caste", "date_of_birth", "academic_level",
-                    "year", "university", "marks_10_type", "marks_10_value", "marks_12_type", "marks_12_value",
-                    "graduation_type", "graduation_value", "father_name", "mother_name", "family_annual_income",
-                    "course", "year_of_course", "10th", "12th_marks", "grade_in_cgpa_1", "Family_income",
-                    "father", "mother", "family_income", "State", "City", "District", "district", "Village",
-                    "village", "DOB", "Gender", "Religion", "Caste", "percentage_10", "percentage_12",
-                    "bank_name", "bankName", "account_number", "bank_account_no", "bankAccountNo", "ifsc",
-                    "ifsc_code", "ifscCode", "accountholder", "account_holder_name", "accountHolderName",
-                    "account_type", "accountType", "aadhar_card", "idnumber", "aachar_card_number",
-                    "income_certificate", "income_cert_no", "domicile_certificate", "domicile_cert_no"
-                ]);
-
-                const extra: Record<string, { label: string; value: string; options?: string[] }> = {};
-                Object.keys(cf).forEach((key) => {
-                    if (!BOUND_KEYS.has(key) && key !== "phone_number" && key !== "mobile" && key !== "phone2") {
-                        const val = cleanVal(cf[key]);
-                        const fieldDef = currentDropdowns?.user_fields?.find((f: any) => f.shortname.toLowerCase() === key.toLowerCase()) ||
-                            currentDropdowns?.course_fields?.find((f: any) => f.shortname.toLowerCase() === key.toLowerCase());
-                        const label = fieldDef?.name || key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
-                        const options = fieldDef?.options?.map((o: any) => o.label) || [];
-                        extra[key] = { label, value: val, options };
-                    }
-                });
-                setExtraCustomFields(extra);
+                // Set Academic Records from d.academic_details array or fallback to custom_fields
+                let acadList: AcademicRecordItem[] = [];
+                if (Array.isArray(d.academic_details) && d.academic_details.length > 0) {
+                    acadList = d.academic_details.map((item: any) => ({
+                        id: String(item.id),
+                        course_name: item.course_name || "",
+                        category: item.category || "",
+                        institution: item.institution || "",
+                        major: item.major || "",
+                        percentage: item.percentage !== null && item.percentage !== undefined ? String(item.percentage) : "",
+                        cgpa: item.cgpa || "",
+                        academic_year: item.academic_year || "",
+                        graduation_year: item.graduation_year ? String(item.graduation_year) : "",
+                    }));
+                } else {
+                    [1, 2, 3, 4].forEach((idx) => {
+                        const cName = cf[`course_name_${idx}`];
+                        if (cName && cName !== "Other" && cName !== "Select" && cName.trim() !== "") {
+                            acadList.push({
+                                id: `cf_${idx}`,
+                                course_name: cName,
+                                category: cf[`course_category_${idx}`] || "",
+                                institution: cf[`college_university_name_${idx}`] || "",
+                                major: cf[`course_stream_${idx}`] || "",
+                                cgpa: cf[`grade_in_cgpa_${idx}`] || "",
+                                percentage: cf[`grade_in_percentage_${idx}`] || "",
+                                academic_year: cf[`academic_start_year_${idx}`] || "",
+                                graduation_year: cf[`expected_academic_end_date_${idx}`] || "",
+                            });
+                        }
+                    });
+                }
+                setAcademicRecords(acadList);
 
                 if (d.picture && !d.picture.includes('gravatar.com')) {
                     setProfileImageUri(d.picture);
@@ -479,7 +733,10 @@ export default function MobilizerEditStudentScreen() {
 
     const handleSelect = (value: string) => {
         if (pickerConfig.field) {
-            if (pickerConfig.field in extraCustomFields) {
+            if (pickerConfig.field.startsWith("acad_")) {
+                const key = pickerConfig.field.replace("acad_", "");
+                setAcadForm((prev) => ({ ...prev, [key]: value }));
+            } else if (pickerConfig.field in extraCustomFields) {
                 setExtraCustomFields((prev) => ({
                     ...prev,
                     [pickerConfig.field!]: { ...prev[pickerConfig.field!], value },
@@ -864,7 +1121,7 @@ export default function MobilizerEditStudentScreen() {
                                     </TouchableOpacity>
                                 )} />
                                 <Controller control={control} name="category" render={({ field: { value } }) => (
-                                    <TouchableOpacity onPress={() => openPicker("category", "Special Category", CATEGORY_OPTIONS)}>
+                                    <TouchableOpacity onPress={() => openPicker("category", "Special Category", SPECIAL_CATEGORY_OPTIONS)}>
                                         <View pointerEvents="none">
                                             <CustomTextInput icon="star-outline" label="Special Category" placeholder="Select Category" value={value || ""} editable={false} onChangeText={() => { }} inputStyle={{ opacity: 1, fontWeight: "400" }} rightIcon="chevron-down" />
                                         </View>
@@ -924,6 +1181,59 @@ export default function MobilizerEditStudentScreen() {
                     {/* 2. ACADEMIC TAB */}
                     {activeTab === "academic" && (
                         <>
+                            {/* Card 0: Academic Qualifications List (CRUD) */}
+                            <View style={[styles.formCard, { backgroundColor: isDark ? colors.card : "rgba(255,255,255,0.9)", borderColor: colors.border }]}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                    <View>
+                                        <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 2 }]}>Academic Qualifications</Text>
+                                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>Manage student educational records</Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        onPress={handleOpenAddAcademic}
+                                        style={{ backgroundColor: colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                                    >
+                                        <Ionicons name="add" size={16} color="#fff" />
+                                        <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Add</Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                {academicLoading ? (
+                                    <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 12 }} />
+                                ) : academicRecords.length === 0 ? (
+                                    <View style={{ alignItems: 'center', paddingVertical: 16 }}>
+                                        <Ionicons name="school-outline" size={36} color={colors.textSecondary} />
+                                        <Text style={{ fontSize: 14, color: colors.textSecondary, marginTop: 8 }}>No academic records added yet.</Text>
+                                    </View>
+                                ) : (
+                                    <View style={{ gap: 10 }}>
+                                        {academicRecords.map((item) => (
+                                            <View key={item.id} style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc' }}>
+                                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                    <View style={{ flex: 1, paddingRight: 8 }}>
+                                                        <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{item.course_name}</Text>
+                                                        {!!item.institution && <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>{item.institution}</Text>}
+                                                        {!!item.major && <Text style={{ fontSize: 12, color: colors.primary, marginTop: 2 }}>Major: {item.major}</Text>}
+                                                        <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
+                                                            {!!item.academic_year && <Text style={{ fontSize: 11, color: colors.textSecondary }}>Year: {item.academic_year}</Text>}
+                                                            {!!item.cgpa && <Text style={{ fontSize: 11, color: colors.textSecondary }}>CGPA: {item.cgpa}</Text>}
+                                                            {!!item.percentage && <Text style={{ fontSize: 11, color: colors.textSecondary }}>Marks: {item.percentage}%</Text>}
+                                                        </View>
+                                                    </View>
+                                                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                                                        <TouchableOpacity onPress={() => handleOpenEditAcademic(item)} style={{ padding: 4 }}>
+                                                            <Ionicons name="create-outline" size={18} color={colors.primary} />
+                                                        </TouchableOpacity>
+                                                        <TouchableOpacity onPress={() => handleDeleteAcademicRecord(item.id)} style={{ padding: 4 }}>
+                                                            <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                </View>
+                                            </View>
+                                        ))}
+                                    </View>
+                                )}
+                            </View>
+
                             {/* Card 1: Course Information */}
                             <View style={[styles.formCard, { backgroundColor: isDark ? colors.card : "rgba(255,255,255,0.9)", borderColor: colors.border }]}>
                                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Course Information</Text>
@@ -1131,49 +1441,6 @@ export default function MobilizerEditStudentScreen() {
                                     </View>
                                 )}
                             </View>
-
-                            {Object.keys(extraCustomFields).length > 0 && (
-                                <View style={[styles.formCard, { backgroundColor: isDark ? colors.card : "rgba(255,255,255,0.9)", borderColor: colors.border }]}>
-                                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Additional Custom Fields</Text>
-                                    {Object.keys(extraCustomFields).map((shortname) => {
-                                        const field = extraCustomFields[shortname];
-                                        if (field.options && field.options.length > 0) {
-                                            return (
-                                                <TouchableOpacity
-                                                    key={shortname}
-                                                    onPress={() => openPicker(shortname, `Select ${field.label}`, field.options!)}
-                                                >
-                                                    <View pointerEvents="none">
-                                                        <CustomTextInput
-                                                            label={field.label}
-                                                            placeholder={`Select ${field.label}`}
-                                                            value={field.value || ""}
-                                                            editable={false}
-                                                            onChangeText={() => { }}
-                                                            inputStyle={{ opacity: 1, fontWeight: "400" }}
-                                                            rightIcon="chevron-down"
-                                                        />
-                                                    </View>
-                                                </TouchableOpacity>
-                                            );
-                                        }
-                                        return (
-                                            <CustomTextInput
-                                                key={shortname}
-                                                label={field.label}
-                                                placeholder={`Enter ${field.label}`}
-                                                value={field.value || ""}
-                                                onChangeText={(text) => {
-                                                    setExtraCustomFields((prev) => ({
-                                                        ...prev,
-                                                        [shortname]: { ...prev[shortname], value: text },
-                                                    }));
-                                                }}
-                                            />
-                                        );
-                                    })}
-                                </View>
-                            )}
                         </>
                     )}
 
@@ -1234,7 +1501,7 @@ export default function MobilizerEditStudentScreen() {
                 animationType="slide"
                 onRequestClose={() => setDigilockerModalVisible(false)}
             >
-                <View style={[styles.modalContainer, { backgroundColor: isDark ? colors.background : "#f8fafc", paddingTop: insets.top }]}>
+                <View style={[styles.container, { backgroundColor: isDark ? colors.background : "#f8fafc", paddingTop: insets.top }]}>
                     <View style={[styles.modalHeader, { borderBottomColor: colors.border, paddingHorizontal: 20, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                             {digilockerHistory.length > 0 && (
@@ -1289,6 +1556,169 @@ export default function MobilizerEditStudentScreen() {
                         </ScrollView>
                     )}
                 </View>
+            </Modal>
+
+            {/* ACADEMIC RECORD MODAL */}
+            <Modal visible={acadModalVisible} animationType="slide" transparent onRequestClose={() => setAcadModalVisible(false)}>
+                <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", padding: 16 }}>
+                    <View style={{ backgroundColor: isDark ? colors.card : "#fff", borderRadius: 16, padding: 20, maxHeight: "90%", minHeight: 320 }}>
+                        {acadPickerConfig.visible ? (
+                            <View style={{ flex: 1 }}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                                    <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>{acadPickerConfig.title}</Text>
+                                    <TouchableOpacity onPress={() => setAcadPickerConfig(prev => ({ ...prev, visible: false }))}>
+                                        <Ionicons name="close" size={24} color={colors.text} />
+                                    </TouchableOpacity>
+                                </View>
+                                <FlatList
+                                    data={acadPickerConfig.options}
+                                    keyExtractor={(item, index) => `${item}_${index}`}
+                                    renderItem={({ item }) => (
+                                        <TouchableOpacity
+                                            style={{ paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: isDark ? '#333' : '#f0f0f0', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+                                            onPress={() => handleAcadSelect(item)}
+                                        >
+                                            <Text style={{ fontSize: 16, color: colors.text }}>{item}</Text>
+                                            {acadPickerConfig.field && acadForm[acadPickerConfig.field] === item && (
+                                                <Ionicons name="checkmark" size={20} color={colors.primary} />
+                                            )}
+                                        </TouchableOpacity>
+                                    )}
+                                />
+                            </View>
+                        ) : (
+                            <>
+                                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                                    <Text style={{ fontSize: 18, fontWeight: "700", color: colors.text }}>{acadForm.id ? "Edit Qualification" : "Add Qualification"}</Text>
+                                    <TouchableOpacity onPress={() => setAcadModalVisible(false)}>
+                                        <Ionicons name="close" size={24} color={colors.textSecondary} />
+                                    </TouchableOpacity>
+                                </View>
+                                <ScrollView showsVerticalScrollIndicator={false}>
+                                    {/* Course / Qualification Name Dropdown */}
+                                    <TouchableOpacity onPress={() => openAcadPicker("course_name", "Select Course Name *", ACADEMIC_LEVEL_OPTIONS)}>
+                                        <View pointerEvents="none">
+                                            <CustomTextInput
+                                                icon="book-outline"
+                                                label="Course Name *"
+                                                placeholder="Select your course"
+                                                value={acadForm.course_name || ""}
+                                                editable={false}
+                                                onChangeText={() => { }}
+                                                inputStyle={{ opacity: 1 }}
+                                                rightIcon="chevron-down"
+                                            />
+                                        </View>
+                                    </TouchableOpacity>
+
+                                    {/* Category Dropdown (College only) */}
+                                    {!isSchoolCourse(acadForm.course_name) && (
+                                        <TouchableOpacity onPress={() => openAcadPicker("category", "Select Category *", CATEGORY_OPTIONS)}>
+                                            <View pointerEvents="none">
+                                                <CustomTextInput
+                                                    icon="grid-outline"
+                                                    label="Category *"
+                                                    placeholder="Select category (e.g. Engineering)"
+                                                    value={acadForm.category || ""}
+                                                    editable={false}
+                                                    onChangeText={() => { }}
+                                                    inputStyle={{ opacity: 1 }}
+                                                    rightIcon="chevron-down"
+                                                />
+                                            </View>
+                                        </TouchableOpacity>
+                                    )}
+
+                                    {/* Major / Stream Dropdown (College only) */}
+                                    {!isSchoolCourse(acadForm.course_name) && (
+                                        <TouchableOpacity onPress={() => openAcadPicker("major", "Select Major / Stream *", STREAM_OPTIONS)}>
+                                            <View pointerEvents="none">
+                                                <CustomTextInput
+                                                    icon="ribbon-outline"
+                                                    label="Major / Stream *"
+                                                    placeholder="Select your specialization"
+                                                    value={acadForm.major || ""}
+                                                    editable={false}
+                                                    onChangeText={() => { }}
+                                                    inputStyle={{ opacity: 1 }}
+                                                    rightIcon="chevron-down"
+                                                />
+                                            </View>
+                                        </TouchableOpacity>
+                                    )}
+
+                                    {/* Academic Year Dropdown */}
+                                    <TouchableOpacity onPress={() => openAcadPicker("academic_year", isSchoolCourse(acadForm.course_name) ? "Passing Year *" : "Academic Year (Start Year) *", YEAR_OPTIONS)}>
+                                        <View pointerEvents="none">
+                                            <CustomTextInput
+                                                icon="calendar-outline"
+                                                label={isSchoolCourse(acadForm.course_name) ? "Passing Year *" : "Academic Year (Start Year) *"}
+                                                placeholder="Select year"
+                                                value={acadForm.academic_year || ""}
+                                                editable={false}
+                                                onChangeText={() => { }}
+                                                inputStyle={{ opacity: 1 }}
+                                                rightIcon="chevron-down"
+                                            />
+                                        </View>
+                                    </TouchableOpacity>
+
+                                    {/* Institution Details (College or 11th/12th) */}
+                                    {(!isSchoolCourse(acadForm.course_name) || is11th12thCourse(acadForm.course_name)) && (
+                                        <CustomTextInput
+                                            icon="business-outline"
+                                            label={isSchoolCourse(acadForm.course_name) ? "School Name *" : "College / University Name *"}
+                                            placeholder={isSchoolCourse(acadForm.course_name) ? "Enter school name" : "e.g. IIT Delhi, Delhi University"}
+                                            value={acadForm.institution || ""}
+                                            onChangeText={(t) => setAcadForm((p) => ({ ...p, institution: t }))}
+                                        />
+                                    )}
+
+                                    {/* End Year / Session (College only) */}
+                                    {!isSchoolCourse(acadForm.course_name) && (
+                                        <TouchableOpacity onPress={() => openAcadPicker("graduation_year", "Expected Academic End Date", SESSION_OPTIONS)}>
+                                            <View pointerEvents="none">
+                                                <CustomTextInput
+                                                    icon="flag-outline"
+                                                    label="Expected Academic End Date"
+                                                    placeholder="Select end date / session"
+                                                    value={acadForm.graduation_year || ""}
+                                                    editable={false}
+                                                    onChangeText={() => { }}
+                                                    inputStyle={{ opacity: 1 }}
+                                                    rightIcon="chevron-down"
+                                                />
+                                            </View>
+                                        </TouchableOpacity>
+                                    )}
+
+                                    {/* Performance Marks / CGPA */}
+                                    <CustomTextInput
+                                        label="Percentage (%)"
+                                        placeholder="e.g. 85.5"
+                                        keyboardType="decimal-pad"
+                                        value={acadForm.percentage || ""}
+                                        onChangeText={(t) => setAcadForm((p) => ({ ...p, percentage: t }))}
+                                    />
+                                    <CustomTextInput
+                                        label="CGPA"
+                                        placeholder="e.g. 8.5"
+                                        keyboardType="decimal-pad"
+                                        value={acadForm.cgpa || ""}
+                                        onChangeText={(t) => setAcadForm((p) => ({ ...p, cgpa: t }))}
+                                    />
+
+                                    <TouchableOpacity
+                                        onPress={handleSaveAcademicRecord}
+                                        style={{ backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 12 }}
+                                    >
+                                        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>Save Qualification</Text>
+                                    </TouchableOpacity>
+                                </ScrollView>
+                            </>
+                        )}
+                    </View>
+                </KeyboardAvoidingView>
             </Modal>
 
             {loading && (

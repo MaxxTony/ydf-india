@@ -55,6 +55,7 @@ export default function ApplicationReviewerDashboard() {
 
   useFocusEffect(
     useCallback(() => {
+      fetchData();
       const onBackPress = () => {
         Alert.alert("Exit App", "Are you sure you want to exit?", [
           { text: "Cancel", onPress: () => null, style: "cancel" },
@@ -254,9 +255,9 @@ export default function ApplicationReviewerDashboard() {
 
                 {/* Legend Container */}
                 <View style={styles.legendContainerPremium}>
-                  <ChartLegend color="#F59E0B" label="Pending" value={stats.pending_review} isDark={isDark} />
-                  <ChartLegend color="#10B981" label="Approved" value={stats.approved} isDark={isDark} />
-                  <ChartLegend color="#EF4444" label="Rejected" value={stats.rejected} isDark={isDark} />
+                  <ChartLegend color="#F59E0B" label="Pending" value={stats.pending_review} isDark={isDark} onPress={() => router.push("/(dashboard)/reviewer/applications")} />
+                  <ChartLegend color="#10B981" label="Approved" value={stats.approved} isDark={isDark} onPress={() => router.push("/(dashboard)/reviewer/applications")} />
+                  <ChartLegend color="#EF4444" label="Rejected" value={stats.rejected} isDark={isDark} onPress={() => router.push("/(dashboard)/reviewer/applications")} />
                 </View>
               </View>
             </LinearGradient>
@@ -276,6 +277,7 @@ export default function ApplicationReviewerDashboard() {
             color="#10B981"
             delay={100}
             isDark={isDark}
+            onPress={() => router.push("/(dashboard)/reviewer/applications")}
           />
           <MetricCard
             title="Weekly Review"
@@ -284,6 +286,7 @@ export default function ApplicationReviewerDashboard() {
             color="#6366F1"
             delay={200}
             isDark={isDark}
+            onPress={() => router.push("/(dashboard)/reviewer/applications")}
           />
           <MetricCard
             title="Bookmarked"
@@ -292,6 +295,7 @@ export default function ApplicationReviewerDashboard() {
             color="#F59E0B"
             delay={300}
             isDark={isDark}
+            onPress={() => router.push("/(dashboard)/reviewer/applications")}
           />
         </View>
 
@@ -369,7 +373,7 @@ export default function ApplicationReviewerDashboard() {
               </LinearGradient>
               <View style={styles.featureContentBox}>
                 <Text style={[styles.featureTitle, { color: colors.text, fontWeight: '700', fontSize: 15 }]}>View All Applications</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>Evaluate assigned submissions</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>Evaluate submissions</Text>
               </View>
               <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
             </MotiView>
@@ -391,45 +395,48 @@ export default function ApplicationReviewerDashboard() {
 
 // ─── Components ──────────────────────────────────────────────────────────────
 
-function ChartLegend({ color, label, value, isDark }: { color: string, label: string, value: number, isDark: boolean }) {
+function ChartLegend({ color, label, value, isDark, onPress }: { color: string, label: string, value: number, isDark: boolean, onPress?: () => void }) {
   return (
-    <View style={[styles.legendRowPremium, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }]}>
-      <View style={styles.legendInfo}>
-        <View style={[styles.dotPremium, { backgroundColor: color, shadowColor: color }]} />
-        <Text style={[styles.legendLabelPremium, { color: isDark ? "#94A3B8" : "#64748B" }]}>{label}</Text>
+    <TouchableOpacity activeOpacity={0.8} onPress={onPress}>
+      <View style={[styles.legendRowPremium, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }]}>
+        <View style={styles.legendInfo}>
+          <View style={[styles.dotPremium, { backgroundColor: color, shadowColor: color }]} />
+          <Text style={[styles.legendLabelPremium, { color: isDark ? "#94A3B8" : "#64748B" }]}>{label}</Text>
+        </View>
+        <Text style={[styles.legendValuePremium, { color: isDark ? "#F8FAFC" : "#0F172A" }]}>{value}</Text>
       </View>
-      <Text style={[styles.legendValuePremium, { color: isDark ? "#F8FAFC" : "#0F172A" }]}>{value}</Text>
-    </View>
+    </TouchableOpacity>
   )
 }
 
-function MetricCard({ title, value, icon, color, delay, isDark }: any) {
+function MetricCard({ title, value, icon, color, delay, isDark, onPress }: any) {
   let bgColors: readonly [string, string] = ['#10B981', '#047857'];
   if (color === '#6366F1') bgColors = ['#6366F1', '#4338CA'];
   else if (color === '#F59E0B') bgColors = ['#F59E0B', '#B45309'];
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateX: -20 }}
-      animate={{ opacity: 1, translateX: 0 }}
-      transition={{ type: 'timing', duration: 600, delay }}
-      style={{ width: '100%', marginBottom: 12 }}
-    >
-      <LinearGradient
-        colors={bgColors}
-        style={[styles.metricCardPremium, { borderWidth: 0 }]}
+    <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={{ width: '100%', marginBottom: 12 }}>
+      <MotiView
+        from={{ opacity: 0, translateX: -20 }}
+        animate={{ opacity: 1, translateX: 0 }}
+        transition={{ type: 'timing', duration: 600, delay }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-          <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name={icon} size={22} color="#fff" />
+        <LinearGradient
+          colors={bgColors}
+          style={[styles.metricCardPremium, { borderWidth: 0 }]}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+            <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name={icon} size={22} color="#fff" />
+            </View>
+            <View style={styles.metricTextContent}>
+              <Text style={[styles.metricTitlePremium, { color: 'rgba(255,255,255,0.85)', letterSpacing: 0.5 }]}>{title}</Text>
+              <Text style={[styles.metricValuePremium, { color: '#fff', fontSize: 24, fontWeight: '800' }]}>{value}</Text>
+            </View>
           </View>
-          <View style={styles.metricTextContent}>
-            <Text style={[styles.metricTitlePremium, { color: 'rgba(255,255,255,0.85)', letterSpacing: 0.5 }]}>{title}</Text>
-            <Text style={[styles.metricValuePremium, { color: '#fff', fontSize: 24, fontWeight: '800' }]}>{value}</Text>
-          </View>
-        </View>
-      </LinearGradient>
-    </MotiView>
+        </LinearGradient>
+      </MotiView>
+    </TouchableOpacity>
   );
 }
 

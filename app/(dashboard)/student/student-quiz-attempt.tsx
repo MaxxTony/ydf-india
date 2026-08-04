@@ -1,7 +1,7 @@
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -18,20 +18,51 @@ import WebView from "react-native-webview";
 // ─── JS injected into Moodle to detect quiz submission ───────────────────────
 const QUIZ_OBSERVER_JS = `
 (function() {
-    // Watch for Moodle "quiz summary" and "review" pages after submission
     var _lastUrl = location.href;
+    
+    function notifyUrl(url) {
+        try {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'navigation',
+                url: url
+            }));
+        } catch(e) {}
+    }
+
+    // Interval to detect URL changes
     setInterval(function() {
         if (location.href !== _lastUrl) {
             _lastUrl = location.href;
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'navigation', url: location.href }));
+            notifyUrl(location.href);
         }
-    }, 800);
-    // Tell RN the page title when it changes
-    var observer = new MutationObserver(function() {
-        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'title', title: document.title }));
-    });
-    observer.observe(document.querySelector('title') || document.head, { childList: true, subtree: true });
-    window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ready', url: location.href }));
+    }, 400);
+
+    // MutationObserver to watch title changes
+    try {
+        var observer = new MutationObserver(function() {
+            try {
+                window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'title', title: document.title }));
+            } catch(e) {}
+        });
+        observer.observe(document.querySelector('title') || document.head, { childList: true, subtree: true });
+    } catch(e) {}
+
+    // Listen for clicks on "Finish review", "Submit all and finish", or links back to view.php after attempt
+    document.addEventListener('click', function(e) {
+        var target = e.target;
+        while (target && target !== document) {
+            if (target.tagName === 'A' || target.tagName === 'BUTTON' || target.tagName === 'INPUT') {
+                var text = (target.innerText || target.value || target.title || '').toLowerCase();
+                var href = target.href || '';
+                if (text.includes('finish review') || text.includes('submit all and finish') || (href.includes('view.php') && (location.href.includes('review.php') || location.href.includes('attempt.php')))) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'quiz_finish_clicked', url: location.href, href: href }));
+                }
+            }
+            target = target.parentNode;
+        }
+    }, true);
+
+    notifyUrl(location.href);
 })();
 true;
 `;
@@ -46,6 +77,38 @@ export default function StudentQuizAttempt() {
     const [progress, setProgress] = useState(0);
     const [pageTitle, setPageTitle] = useState<string>(title || "Quiz");
     const [canGoBack, setCanGoBack] = useState(false);
+    const [isFinished, setIsFinished] = useState(false);
+
+    const hasAttemptedRef = useRef(false);
+    const hasCompletedRef = useRef(false);
+    const autoCloseTimeoutRef = useRef<any>(null);
+
+    const checkUrlStatus = useCallback((currentUrl: string) => {
+        if (!currentUrl) return;
+        const u = currentUrl.toLowerCase();
+
+        // 1. Mark as attempted if in attempt, process, or summary
+        if (u.includes("attempt.php") || u.includes("processattempt.php") || u.includes("summary.php")) {
+            hasAttemptedRef.current = true;
+        }
+
+        // 2. Mark as review/completed if on review page
+        if (u.includes("review.php")) {
+            hasAttemptedRef.current = true;
+            hasCompletedRef.current = true;
+            setIsFinished(true);
+        }
+
+        // 3. Mark as finished and auto-return if returned to view.php AFTER attempting or reviewing
+        if (u.includes("view.php") && (hasAttemptedRef.current || hasCompletedRef.current)) {
+            setIsFinished(true);
+            if (!autoCloseTimeoutRef.current) {
+                autoCloseTimeoutRef.current = setTimeout(() => {
+                    router.back();
+                }, 800);
+            }
+        }
+    }, []);
 
     // ── No URL guard ──────────────────────────────────────────────────────────
     if (!url) {
@@ -95,13 +158,15 @@ export default function StudentQuizAttempt() {
             if (msg.type === "title" && msg.title) {
                 setPageTitle(msg.title);
             }
-            // Detect quiz review page (submitted successfully)
             if (msg.type === "navigation" && msg.url) {
-                const u: string = msg.url;
-                if (u.includes("review.php") || u.includes("summary.php")) {
-                    // Quiz was submitted — user is now on review or summary page
-                    // We could optionally pop back to the quiz landing, but let the
-                    // student read the review first — they can press Close
+                checkUrlStatus(msg.url);
+            }
+            if (msg.type === "quiz_finish_clicked") {
+                setIsFinished(true);
+                if (!autoCloseTimeoutRef.current) {
+                    autoCloseTimeoutRef.current = setTimeout(() => {
+                        router.back();
+                    }, 600);
                 }
             }
         } catch (_) { }
@@ -109,13 +174,16 @@ export default function StudentQuizAttempt() {
 
     // ── Warn before closing if quiz might be in progress ─────────────────────
     const handleClose = () => {
-        if (loadState === "ready" && !pageTitle.toLowerCase().includes("review")) {
+        if (autoCloseTimeoutRef.current) {
+            clearTimeout(autoCloseTimeoutRef.current);
+        }
+        if (loadState === "ready" && hasAttemptedRef.current && !isFinished) {
             Alert.alert(
-                "Close Quiz?",
-                "Your progress is automatically saved. You can continue this attempt later.",
+                "Close Quiz Attempt?",
+                "Your attempt progress is saved automatically. You can resume it anytime.",
                 [
                     { text: "Keep Attempting", style: "cancel" },
-                    { text: "Close", style: "destructive", onPress: () => router.back() },
+                    { text: "Close & Return", style: "destructive", onPress: () => router.back() },
                 ],
                 { cancelable: true }
             );
@@ -125,7 +193,6 @@ export default function StudentQuizAttempt() {
     };
 
     const decodedUrl = decodeURIComponent(url).replace(/&amp;/g, '&');
-    console.log(decodedUrl)
 
     return (
         <View style={[styles.container, { backgroundColor: isDark ? "#0f0f0f" : "#FFF" }]}>
@@ -133,6 +200,42 @@ export default function StudentQuizAttempt() {
                 barStyle={isDark ? "light-content" : "dark-content"}
                 backgroundColor={isDark ? "#0f0f0f" : "#FFF"}
             />
+
+            {/* ── Completion Top Banner Overlay ─────────────────────────────── */}
+            {isFinished && (
+                <View style={{
+                    position: 'absolute',
+                    top: insets.top + 60,
+                    left: 16,
+                    right: 16,
+                    zIndex: 999,
+                    backgroundColor: '#10B981',
+                    borderRadius: 14,
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 8,
+                    elevation: 6
+                }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        <Ionicons name="checkmark-circle" size={22} color="#fff" style={{ marginRight: 10 }} />
+                        <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>
+                            Quiz Completed! Returning to app…
+                        </Text>
+                    </View>
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        style={{ backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12 }}
+                    >
+                        <Text style={{ color: '#fff', fontWeight: '800', fontSize: 12 }}>Done</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
             {/* ── Header ─────────────────────────────────────────────────── */}
             <View
@@ -239,11 +342,13 @@ export default function StudentQuizAttempt() {
                 }}
                 onError={() => setLoadState("error")}
                 onHttpError={({ nativeEvent }) => {
-                    // Only treat real HTTP errors (4xx, 5xx) as errors
                     if (nativeEvent.statusCode >= 400) setLoadState("error");
                 }}
                 onNavigationStateChange={(navState) => {
                     setCanGoBack(navState.canGoBack);
+                    if (navState.url) {
+                        checkUrlStatus(navState.url);
+                    }
                 }}
                 onMessage={handleMessage}
                 injectedJavaScript={QUIZ_OBSERVER_JS}

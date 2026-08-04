@@ -126,7 +126,7 @@ function SchemeCard({ s, isDark, colors, onPress }: {
           </View>
         </View>
 
-        {/* Info Row: Duration & Assignment */}
+        {/* Info Row: Duration */}
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
             <Ionicons name="calendar-outline" size={12} color={subText} />
@@ -134,12 +134,6 @@ function SchemeCard({ s, isDark, colors, onPress }: {
               {formatDate(s.start_date)} - {formatDate(s.end_date) || 'Open'}
             </Text>
           </View>
-          {assignedToMe > 0 && (
-            <View style={styles.assignmentPill}>
-              <Ionicons name="person-circle" size={14} color="#6366F1" />
-              <Text style={styles.assignmentText}>{assignedToMe} Assigned to me</Text>
-            </View>
-          )}
         </View>
 
         {/* Stats Section - 2x2 Grid for clarity */}

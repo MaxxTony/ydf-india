@@ -53,6 +53,15 @@ export default function ProviderApplicantsScreen() {
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]["key"]>("all");
   const [page, setPage] = useState(1);
 
+  React.useEffect(() => {
+    if (params.status) {
+      const s = String(params.status).toLowerCase();
+      if (s === "approved") setActiveTab("approved");
+      else if (s === "rejected") setActiveTab("rejected");
+      else if (s === "pending" || s === "in_progress" || s === "new") setActiveTab("new");
+    }
+  }, [params.status]);
+
   const scholarshipId = (params.scholarship_id as string) || null;
   const schemeTitle = (params.scheme_title as string) || undefined;
 
@@ -350,22 +359,27 @@ export default function ProviderApplicantsScreen() {
   if (!scholarshipId) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <ReviewerHeader title="Review Applicants" />
+        <ReviewerHeader title="Review Applicants" subtitle="Select a scheme to view applications" />
         <View style={styles.emptyContainer}>
-          <View style={[styles.emptyIcon, { backgroundColor: isDark ? colors.surface : "#f3f4f6" }]}>
-            <Ionicons name="people-circle-outline" size={64} color={colors.textSecondary} />
-          </View>
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>
-            No Scheme Selected
+          <LinearGradient
+            colors={['#3B82F6', '#1D4ED8']}
+            style={{ width: 80, height: 80, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}
+          >
+            <Ionicons name="albums" size={40} color="#fff" />
+          </LinearGradient>
+          <Text style={[styles.emptyTitle, { color: colors.text, fontSize: 20, fontWeight: '800' }]}>
+            Select Existing Scheme First
           </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-            Please select a scheme from your dashboard to view its applicants.
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 20, marginTop: 8, lineHeight: 20 }]}>
+            Applicants are organized by scholarship program. Please select an existing scheme from your programs list to view its applications.
           </Text>
           <TouchableOpacity
-            style={[styles.emptyButton, { backgroundColor: colors.primary }]}
-            onPress={() => router.back()}
+            style={[styles.emptyButton, { backgroundColor: '#3B82F6', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 24, marginTop: 24 }]}
+            onPress={() => router.push({ pathname: "/(dashboard)/provider/my-schemes", params: { selectFor: "applicants", status: params.status } })}
+            activeOpacity={0.8}
           >
-            <Text style={styles.emptyButtonText}>Go Back</Text>
+            <Ionicons name="folder-open-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={[styles.emptyButtonText, { fontWeight: '700', fontSize: 15 }]}>Select Existing Scheme</Text>
           </TouchableOpacity>
         </View>
       </View>

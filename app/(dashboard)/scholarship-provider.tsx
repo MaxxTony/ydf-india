@@ -348,47 +348,50 @@ export default function ScholarshipProviderDashboard() {
           {/* Top Metric Cards Row */}
           <View style={styles.topMetricsRow}>
             {/* Total Scholarships */}
-            {/* Total Scholarships */}
-            <LinearGradient
-              colors={['#10B981', '#059669']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={styles.metricGradientCard}
-            >
-              <View style={styles.metricDecorator1} />
-              <View style={styles.metricDecorator2} />
-              <MotiView 
-                from={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: 'timing', duration: 500 }}
+            <TouchableOpacity style={{ flex: 1 }} activeOpacity={0.8} onPress={() => router.push("/(dashboard)/provider/my-schemes")}>
+              <LinearGradient
+                colors={['#10B981', '#059669']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={styles.metricGradientCard}
               >
-                <View style={styles.metricIconWrapper}>
-                  <Ionicons name="school" size={18} color="#fff" />
-                </View>
-                <Text style={styles.metricValueText}>{stats.totalScholarshipsCreated}</Text>
-                <Text style={styles.metricLabelText}>Total Scholarships</Text>
-              </MotiView>
-            </LinearGradient>
+                <View style={styles.metricDecorator1} />
+                <View style={styles.metricDecorator2} />
+                <MotiView 
+                  from={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'timing', duration: 500 }}
+                >
+                  <View style={styles.metricIconWrapper}>
+                    <Ionicons name="school" size={18} color="#fff" />
+                  </View>
+                  <Text style={styles.metricValueText}>{stats.totalScholarshipsCreated}</Text>
+                  <Text style={styles.metricLabelText}>Total Scholarships</Text>
+                </MotiView>
+              </LinearGradient>
+            </TouchableOpacity>
 
             {/* Total Applications */}
-            <LinearGradient
-              colors={['#3B82F6', '#1D4ED8']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={styles.metricGradientCard}
-            >
-              <View style={styles.metricDecorator1} />
-              <View style={styles.metricDecorator2} />
-              <MotiView 
-                from={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: 'timing', duration: 500, delay: 100 }}
+            <TouchableOpacity style={{ flex: 1 }} activeOpacity={0.8} onPress={() => router.push({ pathname: "/(dashboard)/provider/my-schemes", params: { selectFor: "applicants" } })}>
+              <LinearGradient
+                colors={['#3B82F6', '#1D4ED8']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={styles.metricGradientCard}
               >
-                <View style={styles.metricIconWrapper}>
-                  <Ionicons name="people" size={18} color="#fff" />
-                </View>
-                <Text style={styles.metricValueText}>{stats.totalApplicants}</Text>
-                <Text style={styles.metricLabelText}>Total Applications</Text>
-              </MotiView>
-            </LinearGradient>
+                <View style={styles.metricDecorator1} />
+                <View style={styles.metricDecorator2} />
+                <MotiView 
+                  from={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'timing', duration: 500, delay: 100 }}
+                >
+                  <View style={styles.metricIconWrapper}>
+                    <Ionicons name="people" size={18} color="#fff" />
+                  </View>
+                  <Text style={styles.metricValueText}>{stats.totalApplicants}</Text>
+                  <Text style={styles.metricLabelText}>Total Applications</Text>
+                </MotiView>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
 
           {/* Application Status — Vertical List */}
@@ -407,79 +410,85 @@ export default function ScholarshipProviderDashboard() {
             </View>
 
             {/* Pending Row */}
-            <View style={[styles.statusListRow, { borderBottomWidth: 1, borderBottomColor: isDark ? "rgba(255,255,255,0.04)" : '#f3f4f6' }]}>
-              <View style={[styles.statusListIcon, { backgroundColor: '#FF8A0015' }]}>
-                <Ionicons name="time" size={18} color="#FF8A00" />
-              </View>
-              <View style={styles.statusListBody}>
-                <View style={styles.statusListTop}>
-                  <Text style={[styles.statusListLabel, { color: colors.text }]}>Pending Review</Text>
-                  <Text style={[styles.statusListCount, { color: '#FF8A00', fontWeight: '800' }]}>{stats.pendingApplications}</Text>
+            <TouchableOpacity activeOpacity={0.8} onPress={() => router.push({ pathname: "/(dashboard)/provider/my-schemes", params: { selectFor: "applicants", status: "pending" } })}>
+              <View style={[styles.statusListRow, { borderBottomWidth: 1, borderBottomColor: isDark ? "rgba(255,255,255,0.04)" : '#f3f4f6' }]}>
+                <View style={[styles.statusListIcon, { backgroundColor: '#FF8A0015' }]}>
+                  <Ionicons name="time" size={18} color="#FF8A00" />
                 </View>
-                <View style={[styles.statusListTrack, { backgroundColor: isDark ? '#FF8A0010' : '#FFF3E0' }]}>
-                  <LinearGradient
-                    colors={['#FFA000', '#FF8F00']}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={[styles.statusListFill, {
-                      width: `${stats.totalApplicants > 0 ? Math.min((stats.pendingApplications / stats.totalApplicants) * 100, 100) : 0}%`
-                    }]}
-                  />
+                <View style={styles.statusListBody}>
+                  <View style={styles.statusListTop}>
+                    <Text style={[styles.statusListLabel, { color: colors.text }]}>Pending Review</Text>
+                    <Text style={[styles.statusListCount, { color: '#FF8A00', fontWeight: '800' }]}>{stats.pendingApplications}</Text>
+                  </View>
+                  <View style={[styles.statusListTrack, { backgroundColor: isDark ? '#FF8A0010' : '#FFF3E0' }]}>
+                    <LinearGradient
+                      colors={['#FFA000', '#FF8F00']}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                      style={[styles.statusListFill, {
+                        width: `${stats.totalApplicants > 0 ? Math.min((stats.pendingApplications / stats.totalApplicants) * 100, 100) : 0}%`
+                      }]}
+                    />
+                  </View>
                 </View>
+                <Text style={[styles.statusListPct, { color: colors.textSecondary }]}>
+                  {stats.totalApplicants > 0 ? `${Math.round((stats.pendingApplications / stats.totalApplicants) * 100)}%` : '0%'}
+                </Text>
               </View>
-              <Text style={[styles.statusListPct, { color: colors.textSecondary }]}>
-                {stats.totalApplicants > 0 ? `${Math.round((stats.pendingApplications / stats.totalApplicants) * 100)}%` : '0%'}
-              </Text>
-            </View>
+            </TouchableOpacity>
 
             {/* Approved Row */}
-            <View style={[styles.statusListRow, { borderBottomWidth: 1, borderBottomColor: isDark ? "rgba(255,255,255,0.04)" : '#f3f4f6' }]}>
-              <View style={[styles.statusListIcon, { backgroundColor: '#10B98115' }]}>
-                <Ionicons name="checkmark-circle" size={18} color="#10B981" />
-              </View>
-              <View style={styles.statusListBody}>
-                <View style={styles.statusListTop}>
-                  <Text style={[styles.statusListLabel, { color: colors.text }]}>Approved Applications</Text>
-                  <Text style={[styles.statusListCount, { color: '#10B981', fontWeight: '800' }]}>{stats.approvedApplications}</Text>
+            <TouchableOpacity activeOpacity={0.8} onPress={() => router.push({ pathname: "/(dashboard)/provider/my-schemes", params: { selectFor: "applicants", status: "approved" } })}>
+              <View style={[styles.statusListRow, { borderBottomWidth: 1, borderBottomColor: isDark ? "rgba(255,255,255,0.04)" : '#f3f4f6' }]}>
+                <View style={[styles.statusListIcon, { backgroundColor: '#10B98115' }]}>
+                  <Ionicons name="checkmark-circle" size={18} color="#10B981" />
                 </View>
-                <View style={[styles.statusListTrack, { backgroundColor: isDark ? '#10B98110' : '#E1FCEF' }]}>
-                  <LinearGradient
-                    colors={['#10B981', '#059669']}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={[styles.statusListFill, {
-                      width: `${stats.totalApplicants > 0 ? Math.min((stats.approvedApplications / stats.totalApplicants) * 100, 100) : 0}%`
-                    }]}
-                  />
+                <View style={styles.statusListBody}>
+                  <View style={styles.statusListTop}>
+                    <Text style={[styles.statusListLabel, { color: colors.text }]}>Approved Applications</Text>
+                    <Text style={[styles.statusListCount, { color: '#10B981', fontWeight: '800' }]}>{stats.approvedApplications}</Text>
+                  </View>
+                  <View style={[styles.statusListTrack, { backgroundColor: isDark ? '#10B98110' : '#E1FCEF' }]}>
+                    <LinearGradient
+                      colors={['#10B981', '#059669']}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                      style={[styles.statusListFill, {
+                        width: `${stats.totalApplicants > 0 ? Math.min((stats.approvedApplications / stats.totalApplicants) * 100, 100) : 0}%`
+                      }]}
+                    />
+                  </View>
                 </View>
+                <Text style={[styles.statusListPct, { color: colors.textSecondary }]}>
+                  {stats.totalApplicants > 0 ? `${Math.round((stats.approvedApplications / stats.totalApplicants) * 100)}%` : '0%'}
+                </Text>
               </View>
-              <Text style={[styles.statusListPct, { color: colors.textSecondary }]}>
-                {stats.totalApplicants > 0 ? `${Math.round((stats.approvedApplications / stats.totalApplicants) * 100)}%` : '0%'}
-              </Text>
-            </View>
+            </TouchableOpacity>
 
             {/* Rejected Row */}
-            <View style={styles.statusListRow}>
-              <View style={[styles.statusListIcon, { backgroundColor: '#EF444415' }]}>
-                <Ionicons name="close-circle" size={18} color="#EF4444" />
-              </View>
-              <View style={styles.statusListBody}>
-                <View style={styles.statusListTop}>
-                  <Text style={[styles.statusListLabel, { color: colors.text }]}>Rejected Applications</Text>
-                  <Text style={[styles.statusListCount, { color: '#EF4444', fontWeight: '800' }]}>{stats.rejectedApplications}</Text>
+            <TouchableOpacity activeOpacity={0.8} onPress={() => router.push({ pathname: "/(dashboard)/provider/my-schemes", params: { selectFor: "applicants", status: "rejected" } })}>
+              <View style={styles.statusListRow}>
+                <View style={[styles.statusListIcon, { backgroundColor: '#EF444415' }]}>
+                  <Ionicons name="close-circle" size={18} color="#EF4444" />
                 </View>
-                <View style={[styles.statusListTrack, { backgroundColor: isDark ? '#EF444410' : '#FEE2E2' }]}>
-                  <LinearGradient
-                    colors={['#EF4444', '#DC2626']}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={[styles.statusListFill, {
-                      width: `${stats.totalApplicants > 0 ? Math.min((stats.rejectedApplications / stats.totalApplicants) * 100, 100) : 0}%`
-                    }]}
-                  />
+                <View style={styles.statusListBody}>
+                  <View style={styles.statusListTop}>
+                    <Text style={[styles.statusListLabel, { color: colors.text }]}>Rejected Applications</Text>
+                    <Text style={[styles.statusListCount, { color: '#EF4444', fontWeight: '800' }]}>{stats.rejectedApplications}</Text>
+                  </View>
+                  <View style={[styles.statusListTrack, { backgroundColor: isDark ? '#EF444410' : '#FEE2E2' }]}>
+                    <LinearGradient
+                      colors={['#EF4444', '#DC2626']}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                      style={[styles.statusListFill, {
+                        width: `${stats.totalApplicants > 0 ? Math.min((stats.rejectedApplications / stats.totalApplicants) * 100, 100) : 0}%`
+                      }]}
+                    />
+                  </View>
                 </View>
+                <Text style={[styles.statusListPct, { color: colors.textSecondary }]}>
+                  {stats.totalApplicants > 0 ? `${Math.round((stats.rejectedApplications / stats.totalApplicants) * 100)}%` : '0%'}
+                </Text>
               </View>
-              <Text style={[styles.statusListPct, { color: colors.textSecondary }]}>
-                {stats.totalApplicants > 0 ? `${Math.round((stats.rejectedApplications / stats.totalApplicants) * 100)}%` : '0%'}
-              </Text>
-            </View>
+            </TouchableOpacity>
           </MotiView>
 
           {/* Financial Overview */}

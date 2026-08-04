@@ -3,9 +3,9 @@ import { useTheme } from "@/context/ThemeContext";
 import { getMobilizerApplications } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { MotiView } from "moti";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     FlatList,
@@ -251,11 +251,21 @@ const ft = StyleSheet.create({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function MobilizerApplicationsScreen() {
     const { isDark } = useTheme();
+    const params = useLocalSearchParams();
     const [applications, setApplications] = useState<Application[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeFilter, setActiveFilter] = useState("All");
+
+    useEffect(() => {
+        if (params.status) {
+            const s = String(params.status).toLowerCase();
+            if (s === "approved") setActiveFilter("Approved");
+            else if (s === "rejected") setActiveFilter("Rejected");
+            else if (s === "pending" || s === "in_progress" || s === "new") setActiveFilter("Pending");
+        }
+    }, [params.status]);
 
     const fetchData = async () => {
         try {
@@ -263,7 +273,7 @@ export default function MobilizerApplicationsScreen() {
             const authDataStr = await AsyncStorage.getItem("authData");
             if (!authDataStr) return;
             const { token } = JSON.parse(authDataStr);
-            const res = await getMobilizerApplications(token, { page: 1, per_page: 100 });
+            const res = await getMobilizerApplications(token, { page: 1, per_page: 500 });
             if (res.success && res.data) {
                 const data = res.data.applications || [];
                 setApplications(Array.isArray(data) ? data : []);
@@ -282,14 +292,27 @@ export default function MobilizerApplicationsScreen() {
 
     const filtered = useMemo(() => {
         let list = applications;
-        if (activeFilter !== "All")
-            list = list.filter(a => a.status.toLowerCase() === activeFilter.toLowerCase());
+        if (activeFilter !== "All") {
+            const filterLower = activeFilter.toLowerCase();
+            const approvedStatuses = ['approved', 'accepted', 'enrolled', 'interview', 'interview_mode', 'interview_scheduled', 'shortlisted', 'interviewed', 'scheduled'];
+            const rejectedStatuses = ['rejected', 'reject', 'declined', 'denied', 'disapproved', 'cancelled'];
+            if (filterLower === 'approved') {
+                list = list.filter(a => approvedStatuses.includes((a.status || '').toLowerCase().trim()));
+            } else if (filterLower === 'rejected') {
+                list = list.filter(a => rejectedStatuses.includes((a.status || '').toLowerCase().trim()));
+            } else if (filterLower === 'pending' || filterLower === 'in_progress') {
+                list = list.filter(a => {
+                    const st = (a.status || '').toLowerCase().trim();
+                    return !approvedStatuses.includes(st) && !rejectedStatuses.includes(st);
+                });
+            }
+        }
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
             list = list.filter(a =>
-                a.student.name.toLowerCase().includes(q) ||
-                a.student.email.toLowerCase().includes(q) ||
-                a.scholarship.name.toLowerCase().includes(q)
+                (a.student?.name || '').toLowerCase().includes(q) ||
+                (a.student?.email || '').toLowerCase().includes(q) ||
+                (a.scholarship?.name || '').toLowerCase().includes(q)
             );
         }
         return list;

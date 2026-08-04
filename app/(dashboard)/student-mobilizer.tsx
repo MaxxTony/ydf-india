@@ -286,71 +286,68 @@ export default function StudentMobilizerDashboard() {
           <View style={{ gap: 10 }}>
             {/* Row 1 */}
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <LinearGradient colors={['#3B82F6', '#1D4ED8']} style={{ flex: 1, borderRadius: 20, padding: 16, elevation: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="people" size={16} color="#fff" />
+              <TouchableOpacity style={{ flex: 1 }} activeOpacity={0.8} onPress={() => router.push("/(dashboard)/mobilizer/mobilizer-students")}>
+                <LinearGradient colors={['#3B82F6', '#1D4ED8']} style={{ borderRadius: 20, padding: 16, elevation: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name="people" size={16} color="#fff" />
+                    </View>
+                    <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>{stats.total_students_added}</Text>
                   </View>
-                  <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>{stats.total_students_added}</Text>
-                </View>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.3 }}>Students Added</Text>
-              </LinearGradient>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.3 }}>Students Added</Text>
+                </LinearGradient>
+              </TouchableOpacity>
 
-              <LinearGradient colors={['#8B5CF6', '#5B21B6']} style={{ flex: 1, borderRadius: 20, padding: 16, elevation: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="document-text" size={16} color="#fff" />
+              <TouchableOpacity style={{ flex: 1 }} activeOpacity={0.8} onPress={() => router.push("/(dashboard)/mobilizer/mobilizer-applications")}>
+                <LinearGradient colors={['#8B5CF6', '#5B21B6']} style={{ borderRadius: 20, padding: 16, elevation: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name="document-text" size={16} color="#fff" />
+                    </View>
+                    <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>{stats.total_applications_created}</Text>
                   </View>
-                  <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>{stats.total_applications_created}</Text>
-                </View>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.3 }}>Applications</Text>
-              </LinearGradient>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.3 }}>Applications</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
 
             {/* Row 2 */}
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <LinearGradient colors={['#FF9800', '#F57C00']} style={{ flex: 1, borderRadius: 20, padding: 16, elevation: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="time" size={16} color="#fff" />
+              <TouchableOpacity style={{ flex: 1 }} activeOpacity={0.8} onPress={() => router.push({ pathname: "/(dashboard)/mobilizer/mobilizer-applications", params: { status: "pending" } })}>
+                <LinearGradient colors={['#FF9800', '#F57C00']} style={{ borderRadius: 16, padding: 14, elevation: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name="time" size={14} color="#fff" />
+                    </View>
+                    <Text style={{ fontSize: 18, fontWeight: '800', color: '#fff' }}>{stats.applications_in_progress}</Text>
                   </View>
-                  <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>{stats.applications_in_progress}</Text>
-                </View>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.3 }}>In Progress</Text>
-              </LinearGradient>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.3 }}>In Progress</Text>
+                </LinearGradient>
+              </TouchableOpacity>
 
-              <LinearGradient colors={['#10B981', '#059669']} style={{ flex: 1, borderRadius: 20, padding: 16, elevation: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="checkmark-circle" size={16} color="#fff" />
+              <TouchableOpacity style={{ flex: 1 }} activeOpacity={0.8} onPress={() => router.push({ pathname: "/(dashboard)/mobilizer/mobilizer-applications", params: { status: "approved" } })}>
+                <LinearGradient colors={['#10B981', '#059669']} style={{ borderRadius: 16, padding: 14, elevation: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name="checkmark-circle" size={14} color="#fff" />
+                    </View>
+                    <Text style={{ fontSize: 18, fontWeight: '800', color: '#fff' }}>{stats.applications_approved}</Text>
                   </View>
-                  <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>{stats.applications_approved}</Text>
-                </View>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.3 }}>Approved</Text>
-              </LinearGradient>
-            </View>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.3 }}>Approved</Text>
+                </LinearGradient>
+              </TouchableOpacity>
 
-            {/* Row 3 */}
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <LinearGradient colors={['#EF4444', '#B91C1C']} style={{ flex: 1, borderRadius: 20, padding: 16, elevation: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="close-circle" size={16} color="#fff" />
+              <TouchableOpacity style={{ flex: 1 }} activeOpacity={0.8} onPress={() => router.push({ pathname: "/(dashboard)/mobilizer/mobilizer-applications", params: { status: "rejected" } })}>
+                <LinearGradient colors={['#EF4444', '#B91C1C']} style={{ borderRadius: 16, padding: 14, elevation: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name="close-circle" size={14} color="#fff" />
+                    </View>
+                    <Text style={{ fontSize: 18, fontWeight: '800', color: '#fff' }}>{stats.applications_rejected}</Text>
                   </View>
-                  <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>{stats.applications_rejected}</Text>
-                </View>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.3 }}>Rejected</Text>
-              </LinearGradient>
-
-              <LinearGradient colors={['#F59E0B', '#D97706']} style={{ flex: 1, borderRadius: 20, padding: 16, elevation: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="bookmark" size={16} color="#fff" />
-                  </View>
-                  <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>{stats.scholarships_bookmarked}</Text>
-                </View>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.3 }}>Bookmarked</Text>
-              </LinearGradient>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.3 }}>Rejected</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
           </View>
         </MotiView>

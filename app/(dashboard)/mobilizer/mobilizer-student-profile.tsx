@@ -626,19 +626,6 @@ export default function MobilizerStudentProfileScreen() {
                                     <Text style={[styles.qaBtnText, { color: grad[0] }]}>Scholarships</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity
-                                    style={styles.qaBtn}
-                                    activeOpacity={0.8}
-                                    onPress={() => router.push({
-                                        pathname: "/(dashboard)/mobilizer/mobilizer-bookmarked-scholarships",
-                                        params: { studentId: student.id, studentName: student.fullname || `${student.firstname} ${student.lastname}` }
-                                    })}
-                                >
-                                    <View style={[styles.qaIconPill, { backgroundColor: grad[0] + "15" }]}>
-                                        <Ionicons name="bookmark" size={18} color={grad[0]} />
-                                    </View>
-                                    <Text style={[styles.qaBtnText, { color: grad[0] }]}>Bookmarks</Text>
-                                </TouchableOpacity>
                             </View>
                         </View>
                     </LinearGradient>

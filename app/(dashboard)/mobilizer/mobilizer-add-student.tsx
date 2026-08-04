@@ -1077,7 +1077,7 @@ export default function MobilizerAddStudentScreen() {
                 animationType="slide"
                 onRequestClose={() => setDigilockerModalVisible(false)}
             >
-                <View style={[styles.modalContainer, { backgroundColor: isDark ? colors.background : "#f8fafc", paddingTop: insets.top }]}>
+                <View style={[styles.container, { backgroundColor: isDark ? colors.background : "#f8fafc", paddingTop: insets.top }]}>
                     <View style={[styles.modalHeader, { borderBottomColor: colors.border, paddingHorizontal: 20, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                             {digilockerHistory.length > 0 && (

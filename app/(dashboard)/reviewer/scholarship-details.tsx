@@ -54,13 +54,20 @@ const CircularProgress = ({ size = 52, strokeWidth = 5, percentage = 0, color = 
 
 const cleanScholarshipHtml = (html: string): string => {
   if (!html) return "";
-  return html
-    .replace(/<button[^>]*>[\s\S]*?<\/button>/gi, "")
-    .replace(/<([a-z1-6]+)[^>]*>\s*(?:Close|close|x|X|×|&times;|&#215;|\&#x00d7;)\s*<\/\1>/gi, "")
-    .replace(/<([a-z1-6]+)[^>]*>\s*<([a-z1-6]+)[^>]*>\s*(?:Close|close|x|X|×|&times;|&#215;|\&#x00d7;)\s*<\/\2>\s*<\/\1>/gi, "")
-    .replace(/(?:<br\s*\/?>|\n|\r)?\s*\b(?:Close|close)\b\s*(?=<|$)/gi, "")
-    .replace(/(?:<br\s*\/?>|\n|\r)\s*(?:x|X|×|&times;|&#215;)\s*(?=<|$)/g, "")
-    .trim();
+  let clean = html;
+  clean = clean.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+  clean = clean.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+  clean = clean.replace(/<button[^>]*>[\s\S]*?<\/button>/gi, "");
+  clean = clean.replace(/<div[^>]*class="[^"]*(?:modal-footer|modal-header|vd-footer-box|vd-header-box|vd-btn-wrap)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
+  clean = clean.replace(/<a[^>]*class="[^"]*(?:vd-details-btn|vd-apply-btn|vd-footer-close)[^"]*"[^>]*>[\s\S]*?<\/a>/gi, "");
+  clean = clean.replace(/<([a-z1-6]+)[^>]*>[\s\S]*?(?:View\s+Full\s+Description|View\s+Description|View\s+Details|📄\s*View\s+Full\s+Description|📄\s*View\s+Description|📄\s*View\s+Details|📄\s*Details|Vidyadhan\s+Scholarship\s+Details|📄\s*Vidyadhan\s+Scholarship\s+Details)[\s\S]*?<\/\1>/gi, "");
+  clean = clean.replace(/<([a-z1-6]+)[^>]*>\s*(?:Close|close|x|X|×|&times;|&#215;|\&#x00d7;)\s*<\/\1>/gi, "");
+  clean = clean.replace(/<([a-z1-6]+)[^>]*>\s*<([a-z1-6]+)[^>]*>\s*(?:Close|close|x|X|×|&times;|&#215;|\&#x00d7;)\s*<\/\2>\s*<\/\1>/gi, "");
+  clean = clean.replace(/(?:<br\s*\/?>|\n|\r)?\s*(?:📄\s*)?View\s+(?:Full\s+)?Description\s*(?:<br\s*\/?>|\n|\r|$)/gi, "");
+  clean = clean.replace(/(?:<br\s*\/?>|\n|\r)?\s*(?:📄\s*)?View\s+Details\s*(?:<br\s*\/?>|\n|\r|$)/gi, "");
+  clean = clean.replace(/(?:<br\s*\/?>|\n|\r)?\s*(?:Close|close)\s*(?=<|$)/gi, "");
+  clean = clean.replace(/(?:<br\s*\/?>|\n|\r)\s*(?:x|X|×|&times;|&#215;)\s*(?=<|$)/g, "");
+  return clean.trim();
 };
 
 const stripHtml = (html: string): string => {

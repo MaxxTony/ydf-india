@@ -442,10 +442,6 @@ function ScholarshipCard({ item, isDark, cardBg, onPress, onBookmark, studentId 
             <Ionicons name={hasApplied ? "checkmark-circle" : (isExpired ? "calendar" : "lock-closed")} size={16} color={hasApplied ? (isDark ? "#34D399" : "#166534") : colors.textSecondary} />
           </View>
         )}
-
-        <TouchableOpacity activeOpacity={0.7} onPress={(e) => { e?.stopPropagation?.(); onBookmark(); }} style={styles.bookmarkIconBtn}>
-          <Ionicons name={isBookmarked ? "bookmark" : "bookmark-outline"} size={22} color={isBookmarked ? "#F59E0B" : colors.textSecondary} />
-        </TouchableOpacity>
       </View>
     </View>
   );

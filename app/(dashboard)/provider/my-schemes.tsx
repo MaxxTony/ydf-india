@@ -3,7 +3,7 @@ import { getMyScholarships } from "@/utils/api";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { MotiView } from "moti";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -226,6 +226,9 @@ const FilterModal = ({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function MyCreatedSchemesScreen() {
     const { isDark } = useTheme();
+    const params = useLocalSearchParams();
+    const isSelectForApplicants = params.selectFor === "applicants";
+    const selectStatus = params.status as string | undefined;
     const [query, setQuery] = useState("");
     const [activeTab, setActiveTab] = useState<string>("All");
     const [loading, setLoading] = useState(true);
@@ -343,10 +346,23 @@ export default function MyCreatedSchemesScreen() {
             >
                 <TouchableOpacity
                     activeOpacity={0.86}
-                    onPress={() => router.push({
-                        pathname: "/(dashboard)/provider/my-scheme-details",
-                        params: { scheme: JSON.stringify(item) },
-                    })}
+                    onPress={() => {
+                        if (isSelectForApplicants) {
+                            router.push({
+                                pathname: "/(dashboard)/provider/applicants",
+                                params: {
+                                    scholarship_id: item.id,
+                                    scheme_title: item.title,
+                                    status: selectStatus,
+                                },
+                            });
+                        } else {
+                            router.push({
+                                pathname: "/(dashboard)/provider/my-scheme-details",
+                                params: { scheme: JSON.stringify(item) },
+                            });
+                        }
+                    }}
                     style={[
                         styles.card,
                         {
@@ -509,9 +525,39 @@ export default function MyCreatedSchemesScreen() {
 
             {/* ── ReviewerHeader ────────────────────────────────── */}
             <ReviewerHeader
-                title="Manage Schemes"
-                subtitle="Oversee and manage your programs"
+                title={isSelectForApplicants ? "Select Scheme" : "Manage Schemes"}
+                subtitle={isSelectForApplicants ? "Select a scheme to view applicants" : "Oversee and manage your programs"}
             />
+
+            {isSelectForApplicants && (
+                <MotiView
+                    from={{ opacity: 0, translateY: -10 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    transition={{ type: "timing", duration: 350 }}
+                    style={{
+                        marginHorizontal: 16,
+                        marginTop: 12,
+                        marginBottom: 4,
+                        padding: 14,
+                        borderRadius: 16,
+                        backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "#EFF6FF",
+                        borderWidth: 1,
+                        borderColor: isDark ? "rgba(59, 130, 246, 0.3)" : "#BFDBFE",
+                        flexDirection: "row",
+                        alignItems: "center",
+                    }}
+                >
+                    <Ionicons name="information-circle" size={24} color="#3B82F6" style={{ marginRight: 10 }} />
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 14, fontWeight: "700", color: isDark ? "#60A5FA" : "#1D4ED8" }}>
+                            Select an Existing Scheme
+                        </Text>
+                        <Text style={{ fontSize: 12, color: isDark ? "#93C5FD" : "#3B82F6", marginTop: 2 }}>
+                            Please tap on any scholarship scheme below to view its applicants.
+                        </Text>
+                    </View>
+                </MotiView>
+            )}
 
             {/* ── STICKY SEARCH BAR ─────────────────────────────── */}
             <Animated.View style={[

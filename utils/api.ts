@@ -5116,6 +5116,206 @@ export const getMobilizerStudentProfile = async (
 };
 
 /**
+ * Get Mobilizer Student Academic Details API call
+ */
+export const getMobilizerStudentAcademicDetails = async (
+  token: string,
+  studentId: number
+): Promise<ApiResponse> => {
+  try {
+    const baseUrl = getApiUrl("webservice/rest/server.php");
+    const urlObj = new URL(baseUrl);
+
+    urlObj.searchParams.append("wstoken", token);
+    urlObj.searchParams.append("wsfunction", "local_mobileapi_mobilizer_get_student_academic_details");
+    urlObj.searchParams.append("moodlewsrestformat", "json");
+    urlObj.searchParams.append("student_id", String(studentId));
+
+    const finalUrl = urlObj.toString();
+    console.log("Get Mobilizer Student Academic Details URL:", finalUrl);
+
+    const response = await fetch(finalUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const responseText = await response.text();
+    let data: any = {};
+    try { data = JSON.parse(responseText); } catch (e) { }
+
+    if (response.ok) {
+      if (data.success) {
+        return { success: true, data: data.academic_details || [], message: "Academic details fetched successfully" };
+      }
+      return { success: false, error: data.message || "Failed to fetch academic details" };
+    } else {
+      return { success: false, error: "Failed to fetch academic details" };
+    }
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Create Mobilizer Student Academic Detail API call
+ */
+export const createMobilizerStudentAcademicDetail = async (
+  token: string,
+  studentId: number,
+  params: {
+    course_name: string;
+    category?: string;
+    institution?: string;
+    major?: string;
+    percentage?: string;
+    cgpa?: string;
+    academic_year?: string;
+    graduation_year?: string;
+  }
+): Promise<ApiResponse> => {
+  try {
+    const baseUrl = getApiUrl("webservice/rest/server.php");
+    const urlObj = new URL(baseUrl);
+
+    urlObj.searchParams.append("wstoken", token);
+    urlObj.searchParams.append("wsfunction", "local_mobileapi_mobilizer_create_student_academic_detail");
+    urlObj.searchParams.append("moodlewsrestformat", "json");
+    urlObj.searchParams.append("student_id", String(studentId));
+
+    Object.keys(params).forEach(key => {
+      if (params[key as keyof typeof params]) {
+        urlObj.searchParams.append(key, params[key as keyof typeof params] as string);
+      }
+    });
+
+    const finalUrl = urlObj.toString();
+    console.log("Create Mobilizer Student Academic Detail URL:", finalUrl);
+
+    const response = await fetch(finalUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const responseText = await response.text();
+    let data: any = {};
+    try { data = JSON.parse(responseText); } catch (e) { }
+
+    if (response.ok) {
+      if (data.success) {
+        return { success: true, data: data, message: data.message || "Academic detail created successfully" };
+      }
+      return { success: false, error: data.message || "Failed to create academic detail" };
+    } else {
+      return { success: false, error: "Failed to create academic detail" };
+    }
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Update Mobilizer Student Academic Detail API call
+ */
+export const updateMobilizerStudentAcademicDetail = async (
+  token: string,
+  studentId: number,
+  id: number,
+  params: {
+    course_name?: string;
+    category?: string;
+    institution?: string;
+    major?: string;
+    percentage?: string;
+    cgpa?: string;
+    academic_year?: string;
+    graduation_year?: string;
+  }
+): Promise<ApiResponse> => {
+  try {
+    const baseUrl = getApiUrl("webservice/rest/server.php");
+    const urlObj = new URL(baseUrl);
+
+    urlObj.searchParams.append("wstoken", token);
+    urlObj.searchParams.append("wsfunction", "local_mobileapi_mobilizer_update_student_academic_detail");
+    urlObj.searchParams.append("moodlewsrestformat", "json");
+    urlObj.searchParams.append("student_id", String(studentId));
+    urlObj.searchParams.append("id", String(id));
+
+    Object.keys(params).forEach(key => {
+      if (params[key as keyof typeof params]) {
+        urlObj.searchParams.append(key, params[key as keyof typeof params] as string);
+      }
+    });
+
+    const finalUrl = urlObj.toString();
+    console.log("Update Mobilizer Student Academic Detail URL:", finalUrl);
+
+    const response = await fetch(finalUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const responseText = await response.text();
+    let data: any = {};
+    try { data = JSON.parse(responseText); } catch (e) { }
+
+    if (response.ok) {
+      if (data.success) {
+        return { success: true, data: data, message: data.message || "Academic detail updated successfully" };
+      }
+      return { success: false, error: data.message || "Failed to update academic detail" };
+    } else {
+      return { success: false, error: "Failed to update academic detail" };
+    }
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Delete Mobilizer Student Academic Detail API call
+ */
+export const deleteMobilizerStudentAcademicDetail = async (
+  token: string,
+  studentId: number,
+  id: number
+): Promise<ApiResponse> => {
+  try {
+    const baseUrl = getApiUrl("webservice/rest/server.php");
+    const urlObj = new URL(baseUrl);
+
+    urlObj.searchParams.append("wstoken", token);
+    urlObj.searchParams.append("wsfunction", "local_mobileapi_mobilizer_delete_student_academic_detail");
+    urlObj.searchParams.append("moodlewsrestformat", "json");
+    urlObj.searchParams.append("student_id", String(studentId));
+    urlObj.searchParams.append("id", String(id));
+
+    const finalUrl = urlObj.toString();
+    console.log("Delete Mobilizer Student Academic Detail URL:", finalUrl);
+
+    const response = await fetch(finalUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const responseText = await response.text();
+    let data: any = {};
+    try { data = JSON.parse(responseText); } catch (e) { }
+
+    if (response.ok) {
+      if (data.success) {
+        return { success: true, data: data, message: data.message || "Academic detail deleted successfully" };
+      }
+      return { success: false, error: data.message || "Failed to delete academic detail" };
+    } else {
+      return { success: false, error: "Failed to delete academic detail" };
+    }
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+};
+
+/**
  * Remove (Unlink) Student managed by the current mobilizer.
  */
 export const mobilizerRemoveStudent = async (
