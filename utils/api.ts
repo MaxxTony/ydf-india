@@ -5143,14 +5143,22 @@ export const getMobilizerStudentAcademicDetails = async (
     let data: any = {};
     try { data = JSON.parse(responseText); } catch (e) { }
 
-    if (response.ok) {
-      if (data.success) {
-        return { success: true, data: data.academic_details || [], message: "Academic details fetched successfully" };
-      }
-      return { success: false, error: data.message || "Failed to fetch academic details" };
-    } else {
-      return { success: false, error: "Failed to fetch academic details" };
+    if (data.exception || data.errorcode || !response.ok || !data.success) {
+      // Fallback to local_mobileapi_get_academic_details with student_id param
+      urlObj.searchParams.set("wsfunction", "local_mobileapi_get_academic_details");
+      const fallbackRes = await fetch(urlObj.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const fallbackText = await fallbackRes.text();
+      try { data = JSON.parse(fallbackText); } catch (e) { }
     }
+
+    if (data.success || Array.isArray(data) || Array.isArray(data.academic_details)) {
+      const list = Array.isArray(data) ? data : (data.academic_details || []);
+      return { success: true, data: list, message: "Academic details fetched successfully" };
+    }
+    return { success: false, error: data.message || "Failed to fetch academic details" };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -5200,14 +5208,21 @@ export const createMobilizerStudentAcademicDetail = async (
     let data: any = {};
     try { data = JSON.parse(responseText); } catch (e) { }
 
-    if (response.ok) {
-      if (data.success) {
-        return { success: true, data: data, message: data.message || "Academic detail created successfully" };
-      }
-      return { success: false, error: data.message || "Failed to create academic detail" };
-    } else {
-      return { success: false, error: "Failed to create academic detail" };
+    if (data.exception || data.errorcode || !response.ok) {
+      // Fallback to local_mobileapi_create_academic_detail with student_id param if mobilizer-specific function is not registered in Moodle DB yet
+      urlObj.searchParams.set("wsfunction", "local_mobileapi_create_academic_detail");
+      const fallbackRes = await fetch(urlObj.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const fallbackText = await fallbackRes.text();
+      try { data = JSON.parse(fallbackText); } catch (e) { }
     }
+
+    if (data.success || data.id) {
+      return { success: true, data: data, message: data.message || "Academic detail created successfully" };
+    }
+    return { success: false, error: data.message || data.error || "Failed to create academic detail" };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -5259,14 +5274,21 @@ export const updateMobilizerStudentAcademicDetail = async (
     let data: any = {};
     try { data = JSON.parse(responseText); } catch (e) { }
 
-    if (response.ok) {
-      if (data.success) {
-        return { success: true, data: data, message: data.message || "Academic detail updated successfully" };
-      }
-      return { success: false, error: data.message || "Failed to update academic detail" };
-    } else {
-      return { success: false, error: "Failed to update academic detail" };
+    if (data.exception || data.errorcode || !response.ok) {
+      // Fallback to local_mobileapi_update_academic_detail with student_id param if mobilizer-specific function is not registered in Moodle DB yet
+      urlObj.searchParams.set("wsfunction", "local_mobileapi_update_academic_detail");
+      const fallbackRes = await fetch(urlObj.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const fallbackText = await fallbackRes.text();
+      try { data = JSON.parse(fallbackText); } catch (e) { }
     }
+
+    if (data.success || data.id) {
+      return { success: true, data: data, message: data.message || "Academic detail updated successfully" };
+    }
+    return { success: false, error: data.message || data.error || "Failed to update academic detail" };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

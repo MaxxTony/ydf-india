@@ -313,7 +313,7 @@ export default function StudentMobilizerDashboard() {
 
             {/* Row 2 */}
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity style={{ flex: 1 }} activeOpacity={0.8} onPress={() => router.push({ pathname: "/(dashboard)/mobilizer/mobilizer-applications", params: { status: "pending" } })}>
+              <TouchableOpacity style={{ flex: 1 }} activeOpacity={0.8} onPress={() => router.push({ pathname: "/(dashboard)/mobilizer/mobilizer-applications", params: { status: "in_progress" } })}>
                 <LinearGradient colors={['#FF9800', '#F57C00']} style={{ borderRadius: 16, padding: 14, elevation: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                     <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>

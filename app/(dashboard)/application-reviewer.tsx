@@ -271,24 +271,6 @@ export default function ApplicationReviewerDashboard() {
         {/* ─── Key Metrics List (Vertical) ─── */}
         <View style={styles.verticalMetricsContainer}>
           <MetricCard
-            title="Verified Today"
-            value={stats.verified_today}
-            icon="flash"
-            color="#10B981"
-            delay={100}
-            isDark={isDark}
-            onPress={() => router.push("/(dashboard)/reviewer/applications")}
-          />
-          <MetricCard
-            title="Weekly Review"
-            value={stats.verified_this_week}
-            icon="trending-up"
-            color="#6366F1"
-            delay={200}
-            isDark={isDark}
-            onPress={() => router.push("/(dashboard)/reviewer/applications")}
-          />
-          <MetricCard
             title="Bookmarked"
             value={stats.bookmarked}
             icon="star"

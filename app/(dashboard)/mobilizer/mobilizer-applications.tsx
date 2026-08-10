@@ -44,17 +44,17 @@ const STATUS_CFG: Record<string, { color: string; bg: string; label: string; ico
     new: { color: "#6366F1", bg: "#EDE9FE", label: "New", icon: "sparkles" },
     approved: { color: "#10B981", bg: "#D1FAE5", label: "Approved", icon: "checkmark-circle" },
     rejected: { color: "#EF4444", bg: "#FEE2E2", label: "Rejected", icon: "close-circle" },
-    pending: { color: "#F59E0B", bg: "#FEF3C7", label: "Pending", icon: "time" },
+    pending: { color: "#F59E0B", bg: "#FEF3C7", label: "In Progress", icon: "time" },
     submitted: { color: "#3B82F6", bg: "#DBEAFE", label: "Submitted", icon: "send" },
-    in_progress: { color: "#06B6D4", bg: "#CFFAFE", label: "In Progress", icon: "sync" },
+    in_progress: { color: "#F59E0B", bg: "#FEF3C7", label: "In Progress", icon: "time" },
 };
 const getStatus = (s: string) =>
-    STATUS_CFG[s?.toLowerCase()] ?? { color: "#94A3B8", bg: "#F1F5F9", label: s || "Unknown", icon: "help-circle" };
+    STATUS_CFG[s?.toLowerCase()?.replace(/\s+/g, '_')] ?? { color: "#94A3B8", bg: "#F1F5F9", label: s || "Unknown", icon: "help-circle" };
 
 const fmt = (d: string) =>
     d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
 
-const FILTER_TABS = ["All", "New", "Approved", "Rejected", "Pending"];
+const FILTER_TABS = ["All", "New", "Approved", "Rejected", "In Progress"];
 
 // ─── Application Card ─────────────────────────────────────────────────────────
 function AppCard({ item, index, isDark }: { item: Application; index: number; isDark: boolean }) {
@@ -263,7 +263,8 @@ export default function MobilizerApplicationsScreen() {
             const s = String(params.status).toLowerCase();
             if (s === "approved") setActiveFilter("Approved");
             else if (s === "rejected") setActiveFilter("Rejected");
-            else if (s === "pending" || s === "in_progress" || s === "new") setActiveFilter("Pending");
+            else if (s === "pending" || s === "in_progress" || s === "in progress") setActiveFilter("In Progress");
+            else if (s === "new") setActiveFilter("New");
         }
     }, [params.status]);
 
@@ -300,11 +301,13 @@ export default function MobilizerApplicationsScreen() {
                 list = list.filter(a => approvedStatuses.includes((a.status || '').toLowerCase().trim()));
             } else if (filterLower === 'rejected') {
                 list = list.filter(a => rejectedStatuses.includes((a.status || '').toLowerCase().trim()));
-            } else if (filterLower === 'pending' || filterLower === 'in_progress') {
+            } else if (filterLower === 'in progress' || filterLower === 'in_progress' || filterLower === 'pending') {
                 list = list.filter(a => {
                     const st = (a.status || '').toLowerCase().trim();
                     return !approvedStatuses.includes(st) && !rejectedStatuses.includes(st);
                 });
+            } else if (filterLower === 'new') {
+                list = list.filter(a => (a.status || '').toLowerCase().trim() === 'new');
             }
         }
         if (searchQuery.trim()) {

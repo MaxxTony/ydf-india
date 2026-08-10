@@ -85,33 +85,31 @@ const formSchema = z.object({
     income_cert_no: z.string().optional(),
     domicile_cert_no: z.string().optional(),
 }).superRefine((data, ctx) => {
-    const validCGPA = (s: string) => { const n = parseFloat(s); return !isNaN(n) && n >= 0 && n <= 10; };
-    const validPct = (s: string) => { const n = parseFloat(s); return !isNaN(n) && n >= 0 && n <= 100; };
-    // Only validate when user has filled the field (non-blank). Blank = skip, no error.
+    const checkMarks = (val: string, type?: string) => {
+        const n = parseFloat(val);
+        if (isNaN(n)) return "Must be a valid number";
+        if (n < 0 || n > 100) return "Must be between 0 and 100";
+        if (type === "cgpa" && n > 10 && n <= 100) return null; // Value is percentage score (>10, <=100)
+        if (type === "cgpa" && n > 10) return "CGPA must be between 0 and 10";
+        if (type === "percentage" && n > 100) return "Percentage must be between 0 and 100";
+        return null;
+    };
+
     const v10 = (data.marks_10_value || "").trim();
     if (v10) {
-        if (data.marks_10_type === "cgpa") {
-            if (!validCGPA(v10)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "10th CGPA must be between 0 and 10", path: ["marks_10_value"] });
-        } else {
-            if (!validPct(v10)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "10th Percentage must be between 0 and 100", path: ["marks_10_value"] });
-        }
+        const err = checkMarks(v10, data.marks_10_type);
+        if (err) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `10th ${err}`, path: ["marks_10_value"] });
     }
     const v12 = (data.marks_12_value || "").trim();
     if (v12) {
-        if (data.marks_12_type === "cgpa") {
-            if (!validCGPA(v12)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "12th CGPA must be between 0 and 10", path: ["marks_12_value"] });
-        } else {
-            if (!validPct(v12)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "12th Percentage must be between 0 and 100", path: ["marks_12_value"] });
-        }
+        const err = checkMarks(v12, data.marks_12_type);
+        if (err) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `12th ${err}`, path: ["marks_12_value"] });
     }
     if (data.academic_level !== "School (Class 1-12)") {
         const vGrad = (data.graduation_value || "").trim();
         if (vGrad) {
-            if (data.graduation_type === "cgpa") {
-                if (!validCGPA(vGrad)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Graduation CGPA must be between 0 and 10", path: ["graduation_value"] });
-            } else {
-                if (!validPct(vGrad)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Graduation Percentage must be between 0 and 100", path: ["graduation_value"] });
-            }
+            const err = checkMarks(vGrad, data.graduation_type);
+            if (err) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Graduation ${err}`, path: ["graduation_value"] });
         }
     }
 });

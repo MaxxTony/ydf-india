@@ -95,33 +95,31 @@ const formSchema = z.object({
     stream_12: z.string().optional(),
     competitive_exam: z.string().optional(),
 }).superRefine((data, ctx) => {
-    const validCGPA = (s: string) => { const n = parseFloat(s); return !isNaN(n) && n >= 0 && n <= 10; };
-    const validPct = (s: string) => { const n = parseFloat(s); return !isNaN(n) && n >= 0 && n <= 100; };
-    // Only validate when user has filled the field (non-blank). Blank = skip, no error.
+    const checkMarks = (val: string, type?: string) => {
+        const n = parseFloat(val);
+        if (isNaN(n)) return "Must be a valid number";
+        if (n < 0 || n > 100) return "Must be between 0 and 100";
+        if (type === "cgpa" && n > 10 && n <= 100) return null; // Value is percentage score (>10, <=100)
+        if (type === "cgpa" && n > 10) return "CGPA must be between 0 and 10";
+        if (type === "percentage" && n > 100) return "Percentage must be between 0 and 100";
+        return null;
+    };
+
     const v10 = (data.marks_10_value || "").trim();
     if (v10) {
-        if (data.marks_10_type === "cgpa") {
-            if (!validCGPA(v10)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "10th CGPA must be between 0 and 10", path: ["marks_10_value"] });
-        } else {
-            if (!validPct(v10)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "10th Percentage must be between 0 and 100", path: ["marks_10_value"] });
-        }
+        const err = checkMarks(v10, data.marks_10_type);
+        if (err) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `10th ${err}`, path: ["marks_10_value"] });
     }
     const v12 = (data.marks_12_value || "").trim();
     if (v12) {
-        if (data.marks_12_type === "cgpa") {
-            if (!validCGPA(v12)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "12th CGPA must be between 0 and 10", path: ["marks_12_value"] });
-        } else {
-            if (!validPct(v12)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "12th Percentage must be between 0 and 100", path: ["marks_12_value"] });
-        }
+        const err = checkMarks(v12, data.marks_12_type);
+        if (err) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `12th ${err}`, path: ["marks_12_value"] });
     }
     if (data.academic_level !== "School (Class 1-12)") {
         const vGrad = (data.graduation_value || "").trim();
         if (vGrad) {
-            if (data.graduation_type === "cgpa") {
-                if (!validCGPA(vGrad)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Graduation CGPA must be between 0 and 10", path: ["graduation_value"] });
-            } else {
-                if (!validPct(vGrad)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Graduation Percentage must be between 0 and 100", path: ["graduation_value"] });
-            }
+            const err = checkMarks(vGrad, data.graduation_type);
+            if (err) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Graduation ${err}`, path: ["graduation_value"] });
         }
     }
 });
@@ -137,6 +135,70 @@ const EDIT_TABS = [
     { id: "financial", label: "Financial", icon: "cash-outline", color: "#10B981" },
     { id: "documents", label: "Documents", icon: "document-text-outline", color: "#FF9800" },
 ];
+
+const TAB_FIELDS: Record<string, string[]> = {
+    personal: [
+        "username",
+        "password",
+        "firstname",
+        "lastname",
+        "email",
+        "phone1",
+        "whatsapp_number",
+        "village",
+        "block",
+        "district",
+        "application_type",
+        "scheme_name",
+        "domicile_state",
+        "family_annual_income",
+        "category",
+        "gender",
+        "date_of_birth",
+        "religion",
+        "caste",
+        "father_name",
+        "mother_name",
+        "address",
+        "city",
+        "state",
+        "country",
+        "registering_as",
+    ],
+    academic: [
+        "academic_level",
+        "category",
+        "stream",
+        "institution",
+        "graduation_type",
+        "graduation_value",
+        "year",
+        "session",
+        "university",
+        "marks_10_type",
+        "marks_10_value",
+        "marks_12_type",
+        "marks_12_value",
+        "board_10",
+        "board_12",
+        "stream_12",
+        "passing_year_12",
+        "competitive_exam",
+        "competitive_exam_name",
+    ],
+    financial: [
+        "bank_name",
+        "accountholder",
+        "account_number",
+        "ifsc",
+        "account_type",
+    ],
+    documents: [
+        "aadhar_number",
+        "income_cert_no",
+        "domicile_cert_no",
+    ],
+};
 
 export default function MobilizerEditStudentScreen() {
     const { isDark, colors } = useTheme();
@@ -233,6 +295,7 @@ export default function MobilizerEditStudentScreen() {
         category: "",
         institution: "",
         major: "",
+        gradeType: "cgpa" as "cgpa" | "percentage",
         percentage: "",
         cgpa: "",
         academic_year: "",
@@ -265,26 +328,7 @@ export default function MobilizerEditStudentScreen() {
     const fetchStudentAcademicDetails = async (numStudentId: number) => {
         try {
             setAcademicLoading(true);
-            const authDataStr = await AsyncStorage.getItem("authData");
-            if (authDataStr) {
-                const authData = JSON.parse(authDataStr);
-                if (authData.token) {
-                    const res = await getMobilizerStudentAcademicDetails(authData.token, numStudentId);
-                    if (res.success && Array.isArray(res.data)) {
-                        setAcademicRecords(res.data.map((item: any) => ({
-                            id: String(item.id),
-                            course_name: item.course_name || "",
-                            category: item.category || "",
-                            institution: item.institution || "",
-                            major: item.major || "",
-                            percentage: item.percentage !== null && item.percentage !== undefined ? String(item.percentage) : "",
-                            cgpa: item.cgpa || "",
-                            academic_year: item.academic_year || "",
-                            graduation_year: item.graduation_year ? String(item.graduation_year) : "",
-                        })));
-                    }
-                }
-            }
+            await fetchStudentData();
         } catch (e) {
             console.log("Failed to fetch student academic details:", e);
         } finally {
@@ -300,6 +344,7 @@ export default function MobilizerEditStudentScreen() {
             category: "",
             institution: "",
             major: "",
+            gradeType: "cgpa",
             percentage: "",
             cgpa: "",
             academic_year: "",
@@ -310,12 +355,16 @@ export default function MobilizerEditStudentScreen() {
 
     const handleOpenEditAcademic = (record: AcademicRecordItem) => {
         setAcadPickerConfig({ visible: false, title: "", options: [], field: null });
+        const hasPct = !!(record.percentage && record.percentage.trim());
+        const hasCgpa = !!(record.cgpa && record.cgpa.trim());
+        const inferredGradeType: "cgpa" | "percentage" = hasPct && !hasCgpa ? "percentage" : "cgpa";
         setAcadForm({
             id: record.id,
             course_name: record.course_name || "",
             category: record.category || "",
             institution: record.institution || "",
             major: record.major || "",
+            gradeType: inferredGradeType,
             percentage: record.percentage || "",
             cgpa: record.cgpa || "",
             academic_year: record.academic_year || "",
@@ -329,6 +378,23 @@ export default function MobilizerEditStudentScreen() {
             Alert.alert("Error", "Course Name is required.");
             return;
         }
+
+        // Validate CGPA vs Percentage bounds
+        if (acadForm.gradeType === "cgpa" && acadForm.cgpa.trim()) {
+            const num = parseFloat(acadForm.cgpa.trim());
+            if (isNaN(num) || num < 0 || num > 10) {
+                Alert.alert("Invalid CGPA", "CGPA must be between 0 and 10. If you are entering percentage (e.g. 88%), please switch to Percentage (%).");
+                return;
+            }
+        }
+        if (acadForm.gradeType === "percentage" && acadForm.percentage.trim()) {
+            const num = parseFloat(acadForm.percentage.trim());
+            if (isNaN(num) || num < 0 || num > 100) {
+                Alert.alert("Invalid Percentage", "Percentage must be between 0 and 100.");
+                return;
+            }
+        }
+
         try {
             const authDataStr = await AsyncStorage.getItem("authData");
             if (!authDataStr) return;
@@ -336,13 +402,14 @@ export default function MobilizerEditStudentScreen() {
             const token = authData.token;
             const numStudentId = Number(studentId);
 
+            const isCgpa = acadForm.gradeType === "cgpa";
             const params = {
                 course_name: acadForm.course_name.trim(),
                 category: acadForm.category.trim() || undefined,
                 institution: acadForm.institution.trim() || undefined,
                 major: acadForm.major.trim() || undefined,
-                percentage: acadForm.percentage.trim() || undefined,
-                cgpa: acadForm.cgpa.trim() || undefined,
+                percentage: isCgpa ? "" : (acadForm.percentage.trim() || undefined),
+                cgpa: isCgpa ? (acadForm.cgpa.trim() || undefined) : "",
                 academic_year: acadForm.academic_year.trim() || undefined,
                 graduation_year: acadForm.graduation_year.trim() || undefined,
             };
@@ -359,7 +426,7 @@ export default function MobilizerEditStudentScreen() {
                 setAcadModalVisible(false);
                 fetchStudentAcademicDetails(numStudentId);
             } else {
-                Alert.alert("Error", res.error || "Failed to save academic detail");
+                Alert.alert("Error", res.error || res.message || "Failed to save academic detail");
             }
         } catch (err: any) {
             Alert.alert("Error", err.message || "An error occurred");
@@ -652,12 +719,23 @@ export default function MobilizerEditStudentScreen() {
                 setValue("year", cleanVal(cf.year_of_course || cf.college_current_year));
                 setValue("university", cleanVal(cf.university));
 
-                setValue("marks_10_type", cleanVal(cf.marks_10_type) || "cgpa");
-                setValue("marks_10_value", cleanVal(cf["10th"] || cf.percentage_10th || cf.marks_10_value || cf.percentage_10));
-                setValue("marks_12_type", cleanVal(cf.marks_12_type) || "cgpa");
-                setValue("marks_12_value", cleanVal(cf['12th_marks'] || cf.marks_12_value || cf.percentage_12));
-                setValue("graduation_type", cleanVal(cf.marks_graduation_type) || "cgpa");
-                setValue("graduation_value", cleanVal(cf.grade_in_cgpa_1 || cf.grade_in_cgpa_2 || cf.marks_graduation_value));
+                const val10 = cleanVal(cf["10th"] || cf.percentage_10th || cf.marks_10_value || cf.percentage_10);
+                const num10 = parseFloat(val10 || "0");
+                const type10 = cleanVal(cf.marks_10_type) || (num10 > 10 ? "percentage" : "cgpa");
+                setValue("marks_10_type", type10);
+                setValue("marks_10_value", val10);
+
+                const val12 = cleanVal(cf['12th_marks'] || cf.marks_12_value || cf.percentage_12);
+                const num12 = parseFloat(val12 || "0");
+                const type12 = cleanVal(cf.marks_12_type) || (num12 > 10 ? "percentage" : "cgpa");
+                setValue("marks_12_type", type12);
+                setValue("marks_12_value", val12);
+
+                const valGrad = cleanVal(cf.grade_in_cgpa_1 || cf.grade_in_cgpa_2 || cf.marks_graduation_value);
+                const numGrad = parseFloat(valGrad || "0");
+                const typeGrad = cleanVal(cf.marks_graduation_type) || (numGrad > 10 ? "percentage" : "cgpa");
+                setValue("graduation_type", typeGrad);
+                setValue("graduation_value", valGrad);
 
                 setValue("father_name", cleanVal(cf.father_name || cf.father));
                 setValue("mother_name", cleanVal(cf.mother_name || cf.mother));
@@ -667,9 +745,20 @@ export default function MobilizerEditStudentScreen() {
                 setValue("account_number", cleanVal(finInfo.account_number || finInfo.account_number_masked || cf.account_number || cf.bank_account_no || cf.bankAccountNo));
                 setValue("ifsc", cleanVal(finInfo.ifsc || cf.ifsc || cf.ifsc_code || cf.ifscCode));
                 setValue("accountholder", cleanVal(finInfo.accountholder || cf.accountholder || cf.account_holder_name || cf.accountHolderName));
-                let rawAccType = cleanVal(finInfo.account_type || cf.account_type || cf.accountType);
+                let rawAccType = cleanVal(
+                    finInfo.account_type ||
+                    finInfo.accountType ||
+                    cf.account_type ||
+                    cf.accountType ||
+                    cf.accounttype ||
+                    cf.type_of_account
+                );
                 if (rawAccType) {
-                    const matched = ACCOUNT_TYPE_OPTIONS.find(opt => opt.toLowerCase() === rawAccType.toLowerCase());
+                    const lower = rawAccType.toLowerCase();
+                    const matched = ACCOUNT_TYPE_OPTIONS.find(opt => {
+                        const optLower = opt.toLowerCase();
+                        return lower === optLower || lower.startsWith(optLower) || optLower.startsWith(lower);
+                    });
                     if (matched) rawAccType = matched;
                 }
                 setValue("account_type", rawAccType);
@@ -873,7 +962,12 @@ export default function MobilizerEditStudentScreen() {
             if (data.account_number) customfields.push({ shortname: "account_number", value: data.account_number.trim() });
             if (data.ifsc) customfields.push({ shortname: "ifsc", value: data.ifsc.trim() });
             if (data.accountholder) customfields.push({ shortname: "accountholder", value: data.accountholder.trim() });
-            if (data.account_type) customfields.push({ shortname: "account_type", value: data.account_type.trim() });
+            if (data.account_type) {
+                const accVal = data.account_type.trim();
+                customfields.push({ shortname: "account_type", value: accVal });
+                customfields.push({ shortname: "accounttype", value: accVal });
+                customfields.push({ shortname: "type_of_account", value: accVal });
+            }
 
             if (data.aadhar_number) customfields.push({ shortname: "aadhar_card", value: data.aadhar_number.trim() });
             if (data.income_cert_no) customfields.push({ shortname: "income_certificate", value: data.income_cert_no.trim() });
@@ -923,6 +1017,36 @@ export default function MobilizerEditStudentScreen() {
             setToast({ visible: true, message: error.message || "Something went wrong", type: "error" });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSaveCurrentTab = async () => {
+        try {
+            const data = getValues();
+            const activeTabFields = TAB_FIELDS[activeTab] || [];
+
+            // Safe parse against schema
+            const result = formSchema.safeParse(data);
+            if (!result.success) {
+                const issues = result.error.issues;
+                // Filter issues strictly to fields belonging to the active tab
+                const tabIssues = issues.filter((issue) => {
+                    const fieldName = issue.path[0] as string;
+                    return activeTabFields.includes(fieldName);
+                });
+
+                if (tabIssues.length > 0) {
+                    const firstIssue = tabIssues[0];
+                    setToast({ visible: true, message: firstIssue.message, type: "error" });
+                    return;
+                }
+            }
+
+            // No validation errors on the current active tab -> execute submit
+            await onSubmit(data);
+        } catch (err: any) {
+            console.error("Save tab error:", err);
+            setToast({ visible: true, message: err.message || "Failed to save tab data", type: "error" });
         }
     };
 
@@ -1233,97 +1357,6 @@ export default function MobilizerEditStudentScreen() {
                                     </View>
                                 )}
                             </View>
-
-                            {/* Card 1: Course Information */}
-                            <View style={[styles.formCard, { backgroundColor: isDark ? colors.card : "rgba(255,255,255,0.9)", borderColor: colors.border }]}>
-                                <Text style={[styles.sectionTitle, { color: colors.text }]}>Course Information</Text>
-                                <Controller control={control} name="academic_level" render={({ field: { value } }) => (
-                                    <TouchableOpacity onPress={() => openPicker("academic_level", "Select Course Name *", ACADEMIC_LEVEL_OPTIONS)}>
-                                        <View pointerEvents="none">
-                                            <CustomTextInput icon="book-outline" label="Course Name *" placeholder="Select your course" value={value || ""} editable={false} onChangeText={() => { }} inputStyle={{ opacity: 1 }} rightIcon="chevron-down" />
-                                        </View>
-                                    </TouchableOpacity>
-                                )} />
-                                <Controller control={control} name="category" render={({ field: { value } }) => (
-                                    <TouchableOpacity onPress={() => openPicker("category", "Select Category *", CATEGORY_OPTIONS)}>
-                                        <View pointerEvents="none">
-                                            <CustomTextInput icon="grid-outline" label="Category *" placeholder="Select category (e.g. Engineering)" value={value || ""} editable={false} onChangeText={() => { }} inputStyle={{ opacity: 1 }} rightIcon="chevron-down" />
-                                        </View>
-                                    </TouchableOpacity>
-                                )} />
-                                <Controller control={control} name="stream" render={({ field: { value } }) => (
-                                    <TouchableOpacity onPress={() => openPicker("stream", "Major / Stream *", STREAM_OPTIONS)}>
-                                        <View pointerEvents="none">
-                                            <CustomTextInput icon="ribbon-outline" label="Major / Stream *" placeholder="Select your specialization" value={value || ""} editable={false} onChangeText={() => { }} inputStyle={{ opacity: 1, fontWeight: "400" }} rightIcon="chevron-down" />
-                                        </View>
-                                    </TouchableOpacity>
-                                )} />
-                            </View>
-
-                            {/* Card 2: Institution Details */}
-                            <View style={[styles.formCard, { backgroundColor: isDark ? colors.card : "rgba(255,255,255,0.9)", borderColor: colors.border }]}>
-                                <Text style={[styles.sectionTitle, { color: colors.text }]}>Institution Details</Text>
-                                <Controller control={control} name="institution" render={({ field: { onChange, value, onBlur } }) => (
-                                    <CustomTextInput 
-                                        icon="business-outline" 
-                                        label="School / College Name *" 
-                                        placeholder="e.g., IIT Delhi, Delhi University" 
-                                        value={value || ""} 
-                                        onChangeText={onChange} 
-                                        onBlur={onBlur} 
-                                    />
-                                )} />
-                            </View>
-
-                            {/* Card 3: Last Year Percentage */}
-                            <View style={[styles.formCard, { backgroundColor: isDark ? colors.card : "rgba(255,255,255,0.9)", borderColor: colors.border }]}>
-                                <Text style={[styles.sectionTitle, { color: colors.text }]}>Last Year Percentage</Text>
-                                
-                                <View style={styles.marksRow}>
-                                    <Text style={[styles.marksLabel, { color: colors.textSecondary }]}>Grade Type</Text>
-                                    <View style={styles.marksTypeRow}>
-                                        {MARKS_TYPE_OPTIONS.map((opt) => (
-                                            <Controller key={`grad-${opt.value}`} control={control} name="graduation_type" render={({ field: { value, onChange } }) => (
-                                                <TouchableOpacity
-                                                    onPress={() => { onChange(opt.value); setValue("graduation_value", ""); }}
-                                                    style={[styles.marksChip, { borderColor: colors.border, backgroundColor: value === opt.value ? (colors.primary + "20") : (isDark ? "rgba(255,255,255,0.05)" : "#f5f5f5") }]}
-                                                >
-                                                    <Text style={[styles.marksChipText, { color: value === opt.value ? colors.primary : colors.text }]}>{opt.label}</Text>
-                                                </TouchableOpacity>
-                                            )} />
-                                        ))}
-                                    </View>
-                                    <Controller control={control} name="graduation_value" render={({ field: { onChange, value } }) => (
-                                        <CustomTextInput
-                                            label="Last Year Percentage / CGPA *"
-                                            placeholder={watch("graduation_type") === "cgpa" ? "e.g. 8.5 (0–10)" : "e.g. 85 (0–100)"}
-                                            value={value || ""}
-                                            onChangeText={onChange}
-                                            keyboardType="decimal-pad"
-                                            error={errors.graduation_value?.message}
-                                        />
-                                    )} />
-                                </View>
-                            </View>
-
-                            {/* Card 4: Timeline */}
-                            <View style={[styles.formCard, { backgroundColor: isDark ? colors.card : "rgba(255,255,255,0.9)", borderColor: colors.border }]}>
-                                <Text style={[styles.sectionTitle, { color: colors.text }]}>Timeline</Text>
-                                <Controller control={control} name="year" render={({ field: { value } }) => (
-                                    <TouchableOpacity onPress={() => openPicker("year", "Academic Year (Start Year) *", YEAR_OPTIONS)}>
-                                        <View pointerEvents="none">
-                                            <CustomTextInput icon="calendar-outline" label="Academic Year (Start Year) *" placeholder="Select start year" value={value || ""} editable={false} onChangeText={() => { }} inputStyle={{ opacity: 1, fontWeight: "400" }} rightIcon="chevron-down" />
-                                        </View>
-                                    </TouchableOpacity>
-                                )} />
-                                <Controller control={control} name="session" render={({ field: { value } }) => (
-                                    <TouchableOpacity onPress={() => openPicker("session", "Expected Academic End Date", SESSION_OPTIONS)}>
-                                        <View pointerEvents="none">
-                                            <CustomTextInput icon="flag-outline" label="Expected Academic End Date" placeholder="Select end date / session" value={value || ""} editable={false} onChangeText={() => { }} inputStyle={{ opacity: 1 }} rightIcon="chevron-down" />
-                                        </View>
-                                    </TouchableOpacity>
-                                )} />
-                            </View>
                         </>
                     )}
 
@@ -1448,8 +1481,8 @@ export default function MobilizerEditStudentScreen() {
 
                 <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20), backgroundColor: isDark ? colors.card : "#fff" }]}>
                     <Button
-                        title={loading ? "Saving..." : "Save Changes"}
-                        onPress={handleSubmit(onSubmit, onInvalid)}
+                        title={loading ? "Saving..." : `Save ${EDIT_TABS.find(t => t.id === activeTab)?.label || "Changes"} Details`}
+                        onPress={handleSaveCurrentTab}
                         disabled={loading}
                         variant="primary"
                     />
@@ -1692,21 +1725,66 @@ export default function MobilizerEditStudentScreen() {
                                         </TouchableOpacity>
                                     )}
 
-                                    {/* Performance Marks / CGPA */}
-                                    <CustomTextInput
-                                        label="Percentage (%)"
-                                        placeholder="e.g. 85.5"
-                                        keyboardType="decimal-pad"
-                                        value={acadForm.percentage || ""}
-                                        onChangeText={(t) => setAcadForm((p) => ({ ...p, percentage: t }))}
-                                    />
-                                    <CustomTextInput
-                                        label="CGPA"
-                                        placeholder="e.g. 8.5"
-                                        keyboardType="decimal-pad"
-                                        value={acadForm.cgpa || ""}
-                                        onChangeText={(t) => setAcadForm((p) => ({ ...p, cgpa: t }))}
-                                    />
+                                    {/* Performance Grade Type Toggle (CGPA vs Percentage) */}
+                                    <View style={{ marginTop: 8, marginBottom: 12 }}>
+                                        <Text style={{ fontSize: 13, fontWeight: "600", color: colors.textSecondary, marginBottom: 8 }}>Grade Type</Text>
+                                        <View style={{ flexDirection: "row", gap: 10 }}>
+                                            <TouchableOpacity
+                                                onPress={() => setAcadForm((p) => ({ ...p, gradeType: "cgpa", percentage: "" }))}
+                                                style={{
+                                                    flex: 1,
+                                                    paddingVertical: 10,
+                                                    borderRadius: 10,
+                                                    alignItems: "center",
+                                                    borderWidth: 1.5,
+                                                    borderColor: acadForm.gradeType === "cgpa" ? colors.primary : colors.border,
+                                                    backgroundColor: acadForm.gradeType === "cgpa" ? (colors.primary + "15") : (isDark ? "rgba(255,255,255,0.05)" : "#f8fafc")
+                                                }}
+                                            >
+                                                <Text style={{ fontWeight: "700", color: acadForm.gradeType === "cgpa" ? colors.primary : colors.text }}>CGPA</Text>
+                                            </TouchableOpacity>
+
+                                            <TouchableOpacity
+                                                onPress={() => setAcadForm((p) => ({ ...p, gradeType: "percentage", cgpa: "" }))}
+                                                style={{
+                                                    flex: 1,
+                                                    paddingVertical: 10,
+                                                    borderRadius: 10,
+                                                    alignItems: "center",
+                                                    borderWidth: 1.5,
+                                                    borderColor: acadForm.gradeType === "percentage" ? colors.primary : colors.border,
+                                                    backgroundColor: acadForm.gradeType === "percentage" ? (colors.primary + "15") : (isDark ? "rgba(255,255,255,0.05)" : "#f8fafc")
+                                                }}
+                                            >
+                                                <Text style={{ fontWeight: "700", color: acadForm.gradeType === "percentage" ? colors.primary : colors.text }}>Percentage (%)</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+
+                                    {acadForm.gradeType === "cgpa" ? (
+                                        <CustomTextInput
+                                            label="CGPA (0–10) *"
+                                            placeholder="e.g. 8.5"
+                                            keyboardType="decimal-pad"
+                                            value={acadForm.cgpa || ""}
+                                            onChangeText={(t) => {
+                                                const num = parseFloat(t);
+                                                if (!isNaN(num) && num > 10 && num <= 100) {
+                                                    setAcadForm((p) => ({ ...p, gradeType: "percentage", percentage: t, cgpa: "" }));
+                                                } else {
+                                                    setAcadForm((p) => ({ ...p, cgpa: t }));
+                                                }
+                                            }}
+                                        />
+                                    ) : (
+                                        <CustomTextInput
+                                            label="Percentage (%) *"
+                                            placeholder="e.g. 85.5"
+                                            keyboardType="decimal-pad"
+                                            value={acadForm.percentage || ""}
+                                            onChangeText={(t) => setAcadForm((p) => ({ ...p, percentage: t }))}
+                                        />
+                                    )}
 
                                     <TouchableOpacity
                                         onPress={handleSaveAcademicRecord}
