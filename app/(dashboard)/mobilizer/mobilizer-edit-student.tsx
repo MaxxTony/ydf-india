@@ -379,15 +379,23 @@ export default function MobilizerEditStudentScreen() {
             return;
         }
 
-        // Validate CGPA vs Percentage bounds
-        if (acadForm.gradeType === "cgpa" && acadForm.cgpa.trim()) {
+        // Validate CGPA vs Percentage bounds and requirement
+        if (acadForm.gradeType === "cgpa") {
+            if (!acadForm.cgpa.trim()) {
+                Alert.alert("Error", "CGPA is required.");
+                return;
+            }
             const num = parseFloat(acadForm.cgpa.trim());
             if (isNaN(num) || num < 0 || num > 10) {
                 Alert.alert("Invalid CGPA", "CGPA must be between 0 and 10. If you are entering percentage (e.g. 88%), please switch to Percentage (%).");
                 return;
             }
         }
-        if (acadForm.gradeType === "percentage" && acadForm.percentage.trim()) {
+        if (acadForm.gradeType === "percentage") {
+            if (!acadForm.percentage.trim()) {
+                Alert.alert("Error", "Percentage is required.");
+                return;
+            }
             const num = parseFloat(acadForm.percentage.trim());
             if (isNaN(num) || num < 0 || num > 100) {
                 Alert.alert("Invalid Percentage", "Percentage must be between 0 and 100.");
@@ -569,6 +577,17 @@ export default function MobilizerEditStudentScreen() {
     const [extraCustomFields, setExtraCustomFields] = useState<Record<string, { label: string; value: string; options?: string[] }>>({});
 
     const [datePickerVisible, setDatePickerVisible] = useState(false);
+    const [acadEndDatePickerVisible, setAcadEndDatePickerVisible] = useState(false);
+
+    const getAcadEndDatePickerDate = () => {
+        if (acadForm.graduation_year) {
+            const parsed = Date.parse(acadForm.graduation_year);
+            if (!isNaN(parsed)) {
+                return new Date(parsed);
+            }
+        }
+        return new Date();
+    };
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: "success" | "error" | "info" }>({
         visible: false,
         message: "",
@@ -1526,6 +1545,8 @@ export default function MobilizerEditStudentScreen() {
                 onCancel={() => setDatePickerVisible(false)}
             />
 
+
+
             {WebViewComponent}
 
             {/* DigiLocker Files Modal */}
@@ -1709,7 +1730,7 @@ export default function MobilizerEditStudentScreen() {
 
                                     {/* End Year / Session (College only) */}
                                     {!isSchoolCourse(acadForm.course_name) && (
-                                        <TouchableOpacity onPress={() => openAcadPicker("graduation_year", "Expected Academic End Date", SESSION_OPTIONS)}>
+                                        <TouchableOpacity onPress={() => setAcadEndDatePickerVisible(true)}>
                                             <View pointerEvents="none">
                                                 <CustomTextInput
                                                     icon="flag-outline"
@@ -1795,6 +1816,20 @@ export default function MobilizerEditStudentScreen() {
                                 </ScrollView>
                             </>
                         )}
+                        {/* Date Picker - Expected Academic End Date */}
+                        <DateTimePickerModal
+                            isVisible={acadEndDatePickerVisible}
+                            mode="date"
+                            display="spinner"
+                            date={getAcadEndDatePickerDate()}
+                            minimumDate={new Date(1990, 0, 1)}
+                            maximumDate={new Date(2040, 11, 31)}
+                            onConfirm={(date) => {
+                                setAcadForm((p) => ({ ...p, graduation_year: date.toISOString().split('T')[0] }));
+                                setAcadEndDatePickerVisible(false);
+                            }}
+                            onCancel={() => setAcadEndDatePickerVisible(false)}
+                        />
                     </View>
                 </KeyboardAvoidingView>
             </Modal>

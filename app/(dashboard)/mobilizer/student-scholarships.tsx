@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import { openBrowserAsync, WebBrowserPresentationStyle } from "expo-web-browser";
+import { Linking } from "react-native";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -419,9 +419,7 @@ function ScholarshipCard({ item, isDark, cardBg, onPress, onBookmark, studentId 
           <TouchableOpacity
             onPress={() => {
               if (item.external_scheme_link) {
-                openBrowserAsync(item.external_scheme_link, {
-                  presentationStyle: WebBrowserPresentationStyle.AUTOMATIC,
-                });
+                Linking.openURL(item.external_scheme_link);
               } else {
                 router.push({ pathname: "/(dashboard)/mobilizer/mobilizer-apply-form", params: { scholarshipId: item.id || item.scholarship_id, studentId: studentId } });
               }

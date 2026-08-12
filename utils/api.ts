@@ -5324,14 +5324,21 @@ export const deleteMobilizerStudentAcademicDetail = async (
     let data: any = {};
     try { data = JSON.parse(responseText); } catch (e) { }
 
-    if (response.ok) {
-      if (data.success) {
-        return { success: true, data: data, message: data.message || "Academic detail deleted successfully" };
-      }
-      return { success: false, error: data.message || "Failed to delete academic detail" };
-    } else {
-      return { success: false, error: "Failed to delete academic detail" };
+    if (data.exception || data.errorcode || !response.ok) {
+      // Fallback to local_mobileapi_delete_academic_detail with student_id param if mobilizer-specific function is not registered in Moodle DB yet
+      urlObj.searchParams.set("wsfunction", "local_mobileapi_delete_academic_detail");
+      const fallbackRes = await fetch(urlObj.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const fallbackText = await fallbackRes.text();
+      try { data = JSON.parse(fallbackText); } catch (e) { }
     }
+
+    if (data.success) {
+      return { success: true, data: data, message: data.message || "Academic detail deleted successfully" };
+    }
+    return { success: false, error: data.message || data.error || "Failed to delete academic detail" };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

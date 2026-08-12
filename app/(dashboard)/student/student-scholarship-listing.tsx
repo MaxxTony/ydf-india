@@ -7,7 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
-import { openBrowserAsync, WebBrowserPresentationStyle } from "expo-web-browser";
+import { Linking } from "react-native";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -399,9 +399,7 @@ export default function ScholarshipListingScreen() {
               <TouchableOpacity
                 onPress={() => {
                   if (item.external_scheme_link) {
-                    openBrowserAsync(item.external_scheme_link, {
-                      presentationStyle: WebBrowserPresentationStyle.AUTOMATIC,
-                    });
+                    Linking.openURL(item.external_scheme_link);
                   } else {
                     router.push({ pathname: "/(dashboard)/student/student-apply-form", params: { scholarshipId: item.id } });
                   }

@@ -8,7 +8,7 @@ import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { openBrowserAsync, WebBrowserPresentationStyle } from "expo-web-browser";
+import { Linking } from "react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Dimensions, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import RenderHTML from "react-native-render-html";
@@ -1293,9 +1293,7 @@ export default function MobilizerScholarshipDetailsScreen() {
                                                     const ItemContainer = activity.url ? TouchableOpacity : View;
                                                     const handleFallbackPress = () => {
                                                         if (activity.url) {
-                                                            openBrowserAsync(activity.url, {
-                                                                presentationStyle: WebBrowserPresentationStyle.AUTOMATIC,
-                                                            });
+                                                            Linking.openURL(activity.url);
                                                         }
                                                     };
 
@@ -1366,9 +1364,7 @@ export default function MobilizerScholarshipDetailsScreen() {
                     disabled={isApplicationClosed || scholarship.has_applied || scholarship.can_apply === false}
                     onPress={() => {
                         if (scholarship.external_scheme_link) {
-                            openBrowserAsync(scholarship.external_scheme_link, {
-                                presentationStyle: WebBrowserPresentationStyle.AUTOMATIC,
-                            });
+                            Linking.openURL(scholarship.external_scheme_link);
                         } else {
                             router.push({
                                 pathname: "/(dashboard)/mobilizer/mobilizer-apply-form",

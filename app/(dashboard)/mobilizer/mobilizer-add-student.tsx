@@ -281,6 +281,18 @@ export default function MobilizerAddStudentScreen() {
     });
 
     const [datePickerVisible, setDatePickerVisible] = useState(false);
+    const [sessionDatePickerVisible, setSessionDatePickerVisible] = useState(false);
+
+    const getSessionDatePickerValue = () => {
+        const val = watch("session");
+        if (val) {
+            const parsed = Date.parse(val);
+            if (!isNaN(parsed)) {
+                return new Date(parsed);
+            }
+        }
+        return new Date();
+    };
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: "success" | "error" | "info" }>({
         visible: false,
         message: "",
@@ -891,7 +903,7 @@ export default function MobilizerAddStudentScreen() {
                                     </TouchableOpacity>
                                 )} />
                                 <Controller control={control} name="session" render={({ field: { value } }) => (
-                                    <TouchableOpacity onPress={() => openPicker("session", "Expected Academic End Date", SESSION_OPTIONS)}>
+                                    <TouchableOpacity onPress={() => setSessionDatePickerVisible(true)}>
                                         <View pointerEvents="none">
                                             <CustomTextInput icon="flag-outline" label="Expected Academic End Date" placeholder="Select end date / session" value={value || ""} editable={false} onChangeText={() => { }} inputStyle={{ opacity: 1 }} rightIcon="chevron-down" />
                                         </View>
@@ -1065,6 +1077,21 @@ export default function MobilizerAddStudentScreen() {
                 maximumDate={new Date()}
                 onConfirm={onDateConfirm}
                 onCancel={() => setDatePickerVisible(false)}
+            />
+
+            {/* Date Picker - Expected Academic End Date */}
+            <DateTimePickerModal
+                isVisible={sessionDatePickerVisible}
+                mode="date"
+                display="spinner"
+                date={getSessionDatePickerValue()}
+                minimumDate={new Date(1990, 0, 1)}
+                maximumDate={new Date(2040, 11, 31)}
+                onConfirm={(date) => {
+                    setValue("session", date.toISOString().split('T')[0]);
+                    setSessionDatePickerVisible(false);
+                }}
+                onCancel={() => setSessionDatePickerVisible(false)}
             />
 
             {WebViewComponent}
