@@ -76,26 +76,33 @@ export default function MySchemeDetailsScreen() {
 
     // ─── Parse params ─────────────────────────────────────────────────────────
     const raw = useMemo(() => {
+        let res: any = null;
         if (params.scheme) {
-            try { return JSON.parse(params.scheme as string); } catch { }
+            try { res = JSON.parse(params.scheme as string); } catch { }
         }
-        return {
-            id: params.id,
-            title: params.title,
-            shortname: params.shortname,
-            status: params.status,
-            description: params.description,
-            fund_amount: params.fund_amount,
-            start_date: params.start_date,
-            end_date: params.end_date,
-            category: params.category,
-            provider_name: params.provider_name,
-            total_seats: params.total_seats,
-            applications_count: params.applications_count,
-            visible: params.visible,
-            created_at: params.created_at,
-            image: params.image,
-        };
+        if (!res) {
+            res = {
+                id: params.id,
+                title: params.title,
+                shortname: params.shortname,
+                status: params.status,
+                description: params.description,
+                fund_amount: params.fund_amount,
+                start_date: params.start_date,
+                end_date: params.end_date,
+                category: params.category,
+                provider_name: params.provider_name,
+                total_seats: params.total_seats,
+                applications_count: params.applications_count,
+                visible: params.visible,
+                created_at: params.created_at,
+                image: params.image,
+            };
+        }
+        console.log("=== [Scheme Details Screen] Scheme Data & Applications Count ===");
+        console.log("applications_count:", res.applications_count);
+        console.log("Full Scheme Object:", JSON.stringify(res, null, 2));
+        return res;
     }, [params]);
 
     const s = useMemo(() => {
