@@ -8,6 +8,7 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
 import { Linking } from "react-native";
+import { openBrowserAsync, WebBrowserPresentationStyle } from "expo-web-browser";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   FlatList,
@@ -364,9 +365,11 @@ export default function BookmarkedScholarshipsScreen() {
 
             {!isExpired && !hasApplied && item.can_apply !== false ? (
               <TouchableOpacity
-                onPress={() => {
+                onPress={async () => {
                   if (item.external_scheme_link) {
-                    Linking.openURL(item.external_scheme_link);
+                    await openBrowserAsync(item.external_scheme_link, {
+                      presentationStyle: WebBrowserPresentationStyle.AUTOMATIC,
+                    });
                   } else {
                     router.push({
                       pathname: "/(dashboard)/student/student-apply-form",

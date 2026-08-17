@@ -9,6 +9,7 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Linking } from "react-native";
+import { openBrowserAsync, WebBrowserPresentationStyle } from "expo-web-browser";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Dimensions, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import RenderHTML from "react-native-render-html";
@@ -1337,9 +1338,11 @@ export default function ScholarshipDetailsScreen() {
         <TouchableOpacity
           style={[styles.fullWidthButton, { backgroundColor: getCategoryColor(scholarship.category || "General") }, (isApplicationClosed || scholarship.has_applied) && styles.disabledBtn]}
           disabled={isApplicationClosed || scholarship.has_applied}
-          onPress={() => {
+          onPress={async () => {
             if (scholarship.external_scheme_link) {
-              Linking.openURL(scholarship.external_scheme_link);
+              await openBrowserAsync(scholarship.external_scheme_link, {
+                presentationStyle: WebBrowserPresentationStyle.AUTOMATIC,
+              });
             } else {
               router.push({
                 pathname: "/(dashboard)/student/student-apply-form",

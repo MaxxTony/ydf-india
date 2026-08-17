@@ -9,6 +9,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
 import { Linking } from "react-native";
+import { openBrowserAsync, WebBrowserPresentationStyle } from "expo-web-browser";
 import { MotiView } from 'moti';
 import React, { useCallback, useState } from "react";
 import {
@@ -838,9 +839,11 @@ export default function StudentDashboardScreen() {
                       <Text style={[styles.viewBtnText, { color: colors.text }]}>Details</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      onPress={() => {
+                      onPress={async () => {
                         if (s.external_scheme_link) {
-                          Linking.openURL(s.external_scheme_link);
+                          await openBrowserAsync(s.external_scheme_link, {
+                            presentationStyle: WebBrowserPresentationStyle.AUTOMATIC,
+                          });
                         } else {
                           router.push({
                             pathname: "/(dashboard)/student/student-apply-form",
