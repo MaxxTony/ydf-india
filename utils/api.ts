@@ -1160,7 +1160,9 @@ export const getAllScholarships = async (
     }
 
     const finalUrl = urlObj.toString();
-    console.log("Get All Scholarships URL:", finalUrl);
+    console.log("=== Get All Scholarships API Call ===");
+    console.log("URL:", finalUrl);
+    console.log("Payload / Params:", JSON.stringify(params || {}, null, 2));
 
     // Make POST request with query parameters in URL
     const response = await fetch(finalUrl, {
@@ -1177,6 +1179,8 @@ export const getAllScholarships = async (
     // Try to parse as JSON
     try {
       data = responseText ? JSON.parse(responseText) : {};
+      console.log("=== Get All Scholarships Full API Response ===");
+      console.log("Response Data:", JSON.stringify(data, null, 2));
 
       // Check for authentication errors (invalid token or inactive account)
       const shouldLogout = await checkAuthenticationError(data);
@@ -4170,7 +4174,9 @@ export const getMyScholarships = async (
     }
 
     const finalUrl = urlObj.toString();
-    console.log("Get My Scholarships URL:", finalUrl);
+    console.log("=== Get My Scholarships API Call ===");
+    console.log("URL:", finalUrl);
+    console.log("Payload / Params:", JSON.stringify(params || {}, null, 2));
 
     // Make POST request with query parameters in URL
     const response = await fetch(finalUrl, {
@@ -4187,6 +4193,8 @@ export const getMyScholarships = async (
     // Try to parse as JSON
     try {
       data = responseText ? JSON.parse(responseText) : {};
+      console.log("=== Get My Scholarships Full API Response ===");
+      console.log("Response Data:", JSON.stringify(data, null, 2));
 
       // Check for authentication errors (invalid token or inactive account)
       const shouldLogout = await checkAuthenticationError(data);
@@ -4281,7 +4289,9 @@ export const getScholarshipApplicants = async (
     }
 
     const finalUrl = urlObj.toString();
-    console.log("Get Scholarship Applicants URL:", finalUrl);
+    console.log("=== Get Scholarship Applicants API Call ===");
+    console.log("URL:", finalUrl);
+    console.log("Payload / Params:", JSON.stringify({ scholarshipId, ...(params || {}) }, null, 2));
 
     // Make POST request with query parameters in URL
     const response = await fetch(finalUrl, {
@@ -4298,6 +4308,8 @@ export const getScholarshipApplicants = async (
     // Try to parse as JSON
     try {
       data = responseText ? JSON.parse(responseText) : {};
+      console.log("=== Get Scholarship Applicants Full API Response ===");
+      console.log("Response Data:", JSON.stringify(data, null, 2));
 
       // Check for authentication errors (invalid token or inactive account)
       const shouldLogout = await checkAuthenticationError(data);

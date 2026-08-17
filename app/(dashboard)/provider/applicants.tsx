@@ -90,6 +90,9 @@ export default function ProviderApplicantsScreen() {
         status: activeTab !== "all" ? activeTab : undefined
       });
 
+      console.log("=== [Review Applicants Screen] Applicants Count ===", response.data?.applicants?.length);
+      console.log("=== [Review Applicants Screen] Applicants Data ===", JSON.stringify(response.data, null, 2));
+
       if (response.success && response.data?.applicants) {
         const newApplicants = response.data.applicants.map((app: any) => {
           let parsedDetails: any = {};

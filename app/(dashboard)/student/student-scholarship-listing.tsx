@@ -172,6 +172,9 @@ export default function ScholarshipListingScreen() {
         course_name: activeFilters.courseName || undefined,
       });
 
+      console.log("=== [Scholarships Listing Screen] Response Success ===", response.success);
+      console.log("=== [Scholarships Listing Screen] Full Response Data ===", JSON.stringify(response.data, null, 2));
+
       if (response.success && response.data) {
         const apiData = response.data.data || response.data;
         const scholarshipsList = Array.isArray(apiData)
