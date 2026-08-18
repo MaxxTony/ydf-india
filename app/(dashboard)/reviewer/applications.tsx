@@ -1,9 +1,9 @@
 import { useTheme } from "@/context/ThemeContext";
-import { getReviewerSchemes } from "@/utils/api";
+import { getReviewerSchemes, bookmarkScholarship } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -34,6 +34,7 @@ type Scholarship = {
   participants_not_applied?: number;
   assigned_to_me?: number;
   updated_at?: string;
+  bookmarked?: boolean;
 };
 
 // ─── Helper ────────────────────────────────────────────────────────────────────
@@ -72,11 +73,12 @@ function getStatusInfo(s: Scholarship) {
 
 // ─── Scheme Card ──────────────────────────────────────────────────────────────
 // ─── Scheme Card ──────────────────────────────────────────────────────────────
-function SchemeCard({ s, isDark, colors, onPress }: {
+function SchemeCard({ s, isDark, colors, onPress, onBookmark }: {
   s: Scholarship;
   isDark: boolean;
   colors: any;
   onPress: () => void;
+  onBookmark: () => void;
 }) {
 
   const total = s.applications_total ?? 0;
@@ -112,17 +114,30 @@ function SchemeCard({ s, isDark, colors, onPress }: {
             <Ionicons name="school-outline" size={20} color="#fff" />
           </LinearGradient>
 
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.schemeName, { color: colors.text }]} numberOfLines={2}>
-              {s.title}
-            </Text>
-            <View style={styles.catRow}>
-              <View style={[styles.statusTag, { backgroundColor: status.color + "20" }]}>
-                <View style={[styles.statusDot, { backgroundColor: status.color }]} />
-                <Text style={[styles.statusTagText, { color: status.color }]}>{status.label}</Text>
+          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={[styles.schemeName, { color: colors.text }]} numberOfLines={2}>
+                {s.title}
+              </Text>
+              <View style={styles.catRow}>
+                <View style={[styles.statusTag, { backgroundColor: status.color + "20" }]}>
+                  <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+                  <Text style={[styles.statusTagText, { color: status.color }]}>{status.label}</Text>
+                </View>
+                <Text style={[styles.categoryText, { color: colors.textSecondary }]}>{s.category || "General"}</Text>
               </View>
-              <Text style={[styles.categoryText, { color: colors.textSecondary }]}>{s.category || "General"}</Text>
             </View>
+
+            <TouchableOpacity 
+              onPress={onBookmark}
+              style={{ padding: 4 }}
+            >
+              <Ionicons 
+                name={s.bookmarked ? "bookmark" : "bookmark-outline"} 
+                size={22} 
+                color={s.bookmarked ? "#F59E0B" : colors.textSecondary} 
+              />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -219,6 +234,8 @@ function StatBox({ icon, label, value, color, isDark }: {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function ReviewerApplicationsScreen() {
   const { colors, isDark } = useTheme();
+  const params = useLocalSearchParams();
+  const showOnlyBookmarked = params.filter === "bookmarked";
   const [query, setQuery] = useState("");
   const [scholarships, setScholarships] = useState<Scholarship[]>([]);
   const [loading, setLoading] = useState(true);
@@ -242,6 +259,7 @@ export default function ReviewerApplicationsScreen() {
         const mappedList = list.map((scheme: any) => ({
           ...scheme,
           title: scheme.name || scheme.title,
+          bookmarked: !!scheme.bookmarked,
         }));
         setScholarships(mappedList);
       } else {
@@ -256,14 +274,49 @@ export default function ReviewerApplicationsScreen() {
     }
   };
 
+  const handleBookmark = async (scholarshipId: number, isCurrentlyBookmarked: boolean) => {
+    try {
+      const authDataStr = await AsyncStorage.getItem("authData");
+      const authData = authDataStr ? JSON.parse(authDataStr) : null;
+      const token = authData?.token;
+      if (!token) return;
+
+      const action = isCurrentlyBookmarked ? "unbookmark" : "bookmark";
+
+      // Update UI state optimistically
+      setScholarships((prev) =>
+        prev.map((s) => (s.id === scholarshipId ? { ...s, bookmarked: !isCurrentlyBookmarked } : s))
+      );
+
+      const response = await bookmarkScholarship(token, scholarshipId, action);
+      if (!response.success) {
+        // Rollback on failure
+        setScholarships((prev) =>
+          prev.map((s) => (s.id === scholarshipId ? { ...s, bookmarked: isCurrentlyBookmarked } : s))
+        );
+        Alert.alert("Error", response.error || "Failed to update bookmark");
+      }
+    } catch (err: any) {
+      // Rollback on error
+      setScholarships((prev) =>
+        prev.map((s) => (s.id === scholarshipId ? { ...s, bookmarked: isCurrentlyBookmarked } : s))
+      );
+      console.error("Bookmark error:", err);
+    }
+  };
+
   useEffect(() => { fetchScholarships(); }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return scholarships.filter(
+    let list = scholarships;
+    if (showOnlyBookmarked) {
+      list = list.filter((s) => !!s.bookmarked);
+    }
+    return list.filter(
       (s) => !q || s.title.toLowerCase().includes(q) || (s.category && s.category.toLowerCase().includes(q))
     );
-  }, [scholarships, query]);
+  }, [scholarships, query, showOnlyBookmarked]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -273,8 +326,8 @@ export default function ReviewerApplicationsScreen() {
       />
 
       <ReviewerHeader
-        title="Scholarship Schemes"
-        subtitle="Review and manage scholarship cycles"
+        title={showOnlyBookmarked ? "Bookmarked Schemes" : "Scholarship Schemes"}
+        subtitle={showOnlyBookmarked ? "Your saved scholarship cycles" : "Review and manage scholarship cycles"}
         showBackButton={true}
         onBackPress={() => router.back()}
       />
@@ -325,6 +378,7 @@ export default function ReviewerApplicationsScreen() {
                 params: { id: s.id, title: s.title },
               })
             }
+            onBookmark={() => handleBookmark(s.id, !!s.bookmarked)}
           />
         ))}
 
@@ -335,11 +389,13 @@ export default function ReviewerApplicationsScreen() {
             borderColor: isDark ? "rgba(255,255,255,0.06)" : "#E5E7EB",
           }]}>
             <View style={[styles.emptyIconRing, { backgroundColor: isDark ? "rgba(99,102,241,0.1)" : "#EEF2FF" }]}>
-              <Ionicons name="document-text-outline" size={36} color="#6366F1" />
+              <Ionicons name={showOnlyBookmarked ? "bookmark-outline" : "document-text-outline"} size={36} color="#6366F1" />
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No schemes found</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              {showOnlyBookmarked ? "No bookmarked schemes" : "No schemes found"}
+            </Text>
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              Try adjusting your search query
+              {showOnlyBookmarked ? "Use the bookmark icon to save schemes here" : "Try adjusting your search query"}
             </Text>
           </View>
         )}

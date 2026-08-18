@@ -277,7 +277,10 @@ export default function ApplicationReviewerDashboard() {
             color="#F59E0B"
             delay={300}
             isDark={isDark}
-            onPress={() => router.push("/(dashboard)/reviewer/applications")}
+            onPress={() => router.push({
+              pathname: "/(dashboard)/reviewer/applications",
+              params: { filter: "bookmarked" }
+            })}
           />
         </View>
 
