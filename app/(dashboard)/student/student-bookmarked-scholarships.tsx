@@ -1,7 +1,7 @@
 import { AppHeader } from "@/components";
 import Toast from "@/components/Toast";
 import { useTheme } from "@/context/ThemeContext";
-import { bookmarkScholarship, getBookmarkedScholarships } from "@/utils/api";
+import { bookmarkScholarship, getBookmarkedScholarships, getScholarshipDetails } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
@@ -16,7 +16,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  ActivityIndicator
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -53,6 +54,7 @@ export default function BookmarkedScholarshipsScreen() {
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<"success" | "error" | "info">("success");
+  const [fetchingLinkId, setFetchingLinkId] = useState<string | null>(null);
   const inset = useSafeAreaInsets();
 
   // Fetch bookmarked scholarships from API
@@ -365,9 +367,38 @@ export default function BookmarkedScholarshipsScreen() {
 
             {!isExpired && !hasApplied && item.can_apply !== false ? (
               <TouchableOpacity
+                disabled={fetchingLinkId === item.id}
                 onPress={async () => {
-                  if (item.external_scheme_link) {
-                    await openBrowserAsync(item.external_scheme_link, {
+                  let link = item.external_scheme_link;
+                  const isExternal = item.category && (item.category.toLowerCase().includes("external") || item.category.toLowerCase().includes("ext"));
+                  
+                  if (!link && isExternal) {
+                    try {
+                      setFetchingLinkId(item.id);
+                      const authDataString = await AsyncStorage.getItem("authData");
+                      if (authDataString) {
+                        const authData = JSON.parse(authDataString);
+                        const token = authData?.token;
+                        if (token) {
+                          const detailsRes = await getScholarshipDetails(token, item.id);
+                          if (detailsRes.success && detailsRes.data?.external_scheme_link) {
+                            link = detailsRes.data.external_scheme_link;
+                            // Update local state so subsequent clicks don't re-fetch
+                            setApiScholarships((prev) =>
+                              prev.map((s) => (s.id === item.id ? { ...s, external_scheme_link: link } : s))
+                            );
+                          }
+                        }
+                      }
+                    } catch (err) {
+                      console.log("Failed to fetch external scheme link:", err);
+                    } finally {
+                      setFetchingLinkId(null);
+                    }
+                  }
+
+                  if (link) {
+                    await openBrowserAsync(link, {
                       presentationStyle: WebBrowserPresentationStyle.AUTOMATIC,
                     });
                   } else {
@@ -382,8 +413,14 @@ export default function BookmarkedScholarshipsScreen() {
                   { backgroundColor: categoryColor }
                 ]}
               >
-                <Text style={[styles.applyBtnText, { color: "#FFF" }]}>Apply Now</Text>
-                <Ionicons name="arrow-forward" size={16} color="#FFF" />
+                {fetchingLinkId === item.id ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <>
+                    <Text style={[styles.applyBtnText, { color: "#FFF" }]}>Apply Now</Text>
+                    <Ionicons name="arrow-forward" size={16} color="#FFF" />
+                  </>
+                )}
               </TouchableOpacity>
             ) : (
               <View
