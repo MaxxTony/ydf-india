@@ -3,8 +3,8 @@ import { getReviewerSchemes, bookmarkScholarship } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -305,7 +305,11 @@ export default function ReviewerApplicationsScreen() {
     }
   };
 
-  useEffect(() => { fetchScholarships(); }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchScholarships();
+    }, [])
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

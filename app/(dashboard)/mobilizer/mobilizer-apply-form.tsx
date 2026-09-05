@@ -86,11 +86,20 @@ const formSchema = z.object({
                 path: ["currentYear"],
             });
         } else {
-            const passingYear = parseInt(data.currentYear.trim());
-            if (passingYear < currentYearNum) {
+            let yearNum = NaN;
+            if (/^\d{4}/.test(data.currentYear.trim())) {
+                yearNum = parseInt(data.currentYear.trim().substring(0, 4), 10);
+            } else {
+                const d = new Date(data.currentYear);
+                if (!isNaN(d.getTime())) {
+                    yearNum = d.getFullYear();
+                }
+            }
+            const maxYear = currentYearNum + 2;
+            if (isNaN(yearNum) || yearNum < 1970 || yearNum > maxYear) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: `Passing year cannot be earlier than ${currentYearNum}`,
+                    message: `Please enter a valid passing year (1970 - ${maxYear})`,
                     path: ["currentYear"],
                 });
             }
@@ -149,6 +158,16 @@ export default function MobilizerApplyFormScreen() {
     const [toastType, setToastType] = useState<"success" | "error" | "info">("success");
 
     const [isSubmitLoading, setIsSubmitLoading] = useState(false);
+    const [datePickerState, setDatePickerState] = useState<{
+        visible: boolean;
+        field: "gradDate" | "currentYear" | null;
+        currentDate: Date;
+        minimumDate?: Date;
+    }>({
+        visible: false,
+        field: null,
+        currentDate: new Date(),
+    });
 
     const [optionPickerState, setOptionPickerState] = useState<{
 
@@ -176,6 +195,7 @@ export default function MobilizerApplyFormScreen() {
         handleSubmit,
         trigger,
         setValue,
+        clearErrors,
         getValues,
         reset,
         watch,
@@ -378,8 +398,8 @@ export default function MobilizerApplyFormScreen() {
                     student_id_number: values.studentId,
                     institution: values.institution,
                     major: values.major,
-                    graduation_date: values.gradDate,
-                    current_year: values.currentYear,
+                    graduation_date: isGradeStudent ? "" : values.gradDate,
+                    current_year: isGradeStudent ? (values.currentYear ? (values.currentYear.includes("-") ? values.currentYear.substring(0, 4) : values.currentYear) : "") : values.currentYear,
                     gpa: values.gpa,
                     activities: values.activities,
                     financial_info: values.financial,
@@ -656,8 +676,35 @@ export default function MobilizerApplyFormScreen() {
                                     </TouchableOpacity>
                                 )} />
                                 {isGradeStudent ? (
-                                    <Controller control={control} name="currentYear" render={({ field: { onChange, value, onBlur } }) => (
-                                        <CustomTextInput label="Passing Year" placeholder="YYYY" value={value || ""} onChangeText={onChange} onBlur={onBlur} keyboardType="numeric" maxLength={4} error={errors.currentYear?.message} required rightIcon="calendar-outline" />
+                                    <Controller control={control} name="currentYear" render={({ field: { onChange, value } }) => (
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                let initialDate = new Date();
+                                                if (value && /^\d{4}$/.test(value.trim())) {
+                                                    initialDate = new Date(parseInt(value.trim(), 10), 0, 1);
+                                                } else if (value && !isNaN(new Date(value).getTime())) {
+                                                    initialDate = new Date(value);
+                                                }
+                                                setDatePickerState({
+                                                    visible: true,
+                                                    field: "currentYear",
+                                                    currentDate: initialDate,
+                                                    minimumDate: new Date(1970, 0, 1),
+                                                });
+                                            }}>
+                                            <View pointerEvents="none">
+                                                <CustomTextInput
+                                                    label="Passing Year"
+                                                    placeholder="Select Passing Year"
+                                                    value={value || ""}
+                                                    editable={false}
+                                                    onChangeText={() => { }}
+                                                    error={errors.currentYear?.message}
+                                                    required
+                                                    rightIcon="calendar-outline"
+                                                />
+                                            </View>
+                                        </TouchableOpacity>
                                     )} />
                                 ) : (
                                     <>
@@ -869,6 +916,28 @@ export default function MobilizerApplyFormScreen() {
                     </View>
                 </TouchableOpacity>
             </Modal>
+
+            <DateTimePickerModal
+                isVisible={datePickerState.visible}
+                mode="date"
+                display="spinner"
+                date={datePickerState.currentDate}
+                minimumDate={datePickerState.minimumDate || new Date(1970, 0, 1)}
+                maximumDate={new Date(2040, 11, 31)}
+                onConfirm={(date) => {
+                    const isYearOnly = datePickerState.field === "currentYear";
+                    const formatted = isYearOnly ? String(date.getFullYear()) : date.toISOString().split('T')[0];
+                    if (datePickerState.field) {
+                        setValue(datePickerState.field, formatted);
+                        clearErrors(datePickerState.field);
+                    }
+                    setDatePickerState(prev => ({ ...prev, visible: false }));
+                }}
+                onCancel={() => {
+                    setDatePickerState(prev => ({ ...prev, visible: false }));
+                }}
+                themeVariant={isDark ? "dark" : "light"}
+            />
 
             {
                 isSubmitLoading && (

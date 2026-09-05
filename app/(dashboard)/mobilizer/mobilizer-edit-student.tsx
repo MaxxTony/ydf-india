@@ -578,6 +578,14 @@ export default function MobilizerEditStudentScreen() {
 
     const [datePickerVisible, setDatePickerVisible] = useState(false);
     const [acadEndDatePickerVisible, setAcadEndDatePickerVisible] = useState(false);
+    const [acadPassingDatePickerVisible, setAcadPassingDatePickerVisible] = useState(false);
+
+    const getAcadPassingDatePickerDate = () => {
+        if (acadForm.academic_year && /^\d{4}$/.test(acadForm.academic_year)) {
+            return new Date(parseInt(acadForm.academic_year, 10), 0, 1);
+        }
+        return new Date();
+    };
 
     const getAcadEndDatePickerDate = () => {
         if (acadForm.graduation_year) {
@@ -1157,7 +1165,17 @@ export default function MobilizerEditStudentScreen() {
                                 </View>
                                 <CustomTextInput icon="id-card-outline" label="Student ID" value={studentIdCode || (studentId ? (String(studentId).startsWith("YDFADM") ? String(studentId) : `YDFADM${studentId}`) : "")} editable={false} onChangeText={() => { }} inputStyle={{ opacity: 1, fontWeight: "700" }} />
                                 <Controller control={control} name="username" render={({ field: { onChange, value, onBlur } }) => (
-                                    <CustomTextInput icon="at-outline" label="Username *" placeholder="Unique username" value={value || ""} onChangeText={onChange} onBlur={onBlur} editable={false} error={errors.username?.message} />
+                                    <CustomTextInput
+                                        icon="at-outline"
+                                        label="Username *"
+                                        placeholder="Unique username"
+                                        value={value || ""}
+                                        onChangeText={(text) => onChange(text.toLowerCase().trim())}
+                                        onBlur={onBlur}
+                                        editable={true}
+                                        autoCapitalize="none"
+                                        error={errors.username?.message}
+                                    />
                                 )} />
                                 <Controller control={control} name="password" render={({ field: { onChange, value, onBlur } }) => (
                                     <CustomTextInput icon="lock-closed-outline" label="Password" placeholder="Enter password" value={value || ""} onChangeText={onChange} onBlur={onBlur} secureTextEntry error={errors.password?.message} />
@@ -1701,21 +1719,38 @@ export default function MobilizerEditStudentScreen() {
                                         </TouchableOpacity>
                                     )}
 
-                                    {/* Academic Year Dropdown */}
-                                    <TouchableOpacity onPress={() => openAcadPicker("academic_year", isSchoolCourse(acadForm.course_name) ? "Passing Year *" : "Academic Year (Start Year) *", YEAR_OPTIONS)}>
-                                        <View pointerEvents="none">
-                                            <CustomTextInput
-                                                icon="calendar-outline"
-                                                label={isSchoolCourse(acadForm.course_name) ? "Passing Year *" : "Academic Year (Start Year) *"}
-                                                placeholder="Select year"
-                                                value={acadForm.academic_year || ""}
-                                                editable={false}
-                                                onChangeText={() => { }}
-                                                inputStyle={{ opacity: 1 }}
-                                                rightIcon="chevron-down"
-                                            />
-                                        </View>
-                                    </TouchableOpacity>
+                                    {/* Academic Year / Passing Year */}
+                                    {isSchoolCourse(acadForm.course_name) ? (
+                                        <TouchableOpacity onPress={() => setAcadPassingDatePickerVisible(true)}>
+                                            <View pointerEvents="none">
+                                                <CustomTextInput
+                                                    icon="calendar-outline"
+                                                    label="Passing Year *"
+                                                    placeholder="Select passing year"
+                                                    value={acadForm.academic_year || ""}
+                                                    editable={false}
+                                                    onChangeText={() => { }}
+                                                    inputStyle={{ opacity: 1 }}
+                                                    rightIcon="chevron-down"
+                                                />
+                                            </View>
+                                        </TouchableOpacity>
+                                    ) : (
+                                        <TouchableOpacity onPress={() => openAcadPicker("academic_year", "Academic Year (Start Year) *", YEAR_OPTIONS)}>
+                                            <View pointerEvents="none">
+                                                <CustomTextInput
+                                                    icon="calendar-outline"
+                                                    label="Academic Year (Start Year) *"
+                                                    placeholder="Select year"
+                                                    value={acadForm.academic_year || ""}
+                                                    editable={false}
+                                                    onChangeText={() => { }}
+                                                    inputStyle={{ opacity: 1 }}
+                                                    rightIcon="chevron-down"
+                                                />
+                                            </View>
+                                        </TouchableOpacity>
+                                    )}
 
                                     {/* Institution Details (College or 11th/12th) */}
                                     {(!isSchoolCourse(acadForm.course_name) || is11th12thCourse(acadForm.course_name)) && (
@@ -1816,6 +1851,20 @@ export default function MobilizerEditStudentScreen() {
                                 </ScrollView>
                             </>
                         )}
+                        {/* Date Picker - Passing Year (School) */}
+                        <DateTimePickerModal
+                            isVisible={acadPassingDatePickerVisible}
+                            mode="date"
+                            display="spinner"
+                            date={getAcadPassingDatePickerDate()}
+                            minimumDate={new Date(1970, 0, 1)}
+                            maximumDate={new Date(new Date().getFullYear() + 2, 11, 31)}
+                            onConfirm={(date) => {
+                                setAcadForm((p) => ({ ...p, academic_year: String(date.getFullYear()) }));
+                                setAcadPassingDatePickerVisible(false);
+                            }}
+                            onCancel={() => setAcadPassingDatePickerVisible(false)}
+                        />
                         {/* Date Picker - Expected Academic End Date */}
                         <DateTimePickerModal
                             isVisible={acadEndDatePickerVisible}

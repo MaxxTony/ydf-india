@@ -178,7 +178,6 @@ export default function ReviewerProfileScreen() {
           <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, marginTop: 2 }}>
             <Text style={[styles.role, { color: '#fff', fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }]}>{reviewerData.role}</Text>
           </View>
-          <Text style={[styles.organization, { color: 'rgba(255,255,255,0.75)', marginTop: 8, fontSize: 13 }]}>{reviewerData.state}</Text>
         </LinearGradient>
 
 
@@ -208,23 +207,13 @@ export default function ReviewerProfileScreen() {
               </View>
             </View>
 
-            <View style={[styles.infoRow, { borderBottomWidth: 1, borderBottomColor: isDark ? 'rgba(255,255,255,0.04)' : '#f5f5f5', paddingVertical: 12 }]}>
+            <View style={[styles.infoRow, { paddingVertical: 12 }]}>
               <View style={[styles.infoIcon, { backgroundColor: '#F59E0B15', width: 38, height: 38, borderRadius: 12 }]}>
                 <Ionicons name="person" size={18} color="#F59E0B" />
               </View>
               <View style={styles.infoContent}>
                 <Text style={[styles.infoLabel, { color: colors.textSecondary, fontSize: 11 }]}>Gender</Text>
                 <Text style={[styles.infoValue, { color: colors.text, fontWeight: '700', fontSize: 12 }]}>{reviewerData.gender}</Text>
-              </View>
-            </View>
-
-            <View style={[styles.infoRow, { paddingVertical: 12 }]}>
-              <View style={[styles.infoIcon, { backgroundColor: '#8B5CF615', width: 38, height: 38, borderRadius: 12 }]}>
-                <Ionicons name="location" size={18} color="#8B5CF6" />
-              </View>
-              <View style={styles.infoContent}>
-                <Text style={[styles.infoLabel, { color: colors.textSecondary, fontSize: 11 }]}>State</Text>
-                <Text style={[styles.infoValue, { color: colors.text, fontWeight: '700', fontSize: 12 }]}>{reviewerData.state}</Text>
               </View>
             </View>
           </View>

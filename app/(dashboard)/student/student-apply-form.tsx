@@ -97,13 +97,20 @@ const formSchema = z.object({
         path: ["currentYear"],
       });
     } else {
-      const passingDateObj = new Date(data.currentYear);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (passingDateObj < today) {
+      let yearNum = NaN;
+      if (/^\d{4}/.test(data.currentYear.trim())) {
+        yearNum = parseInt(data.currentYear.trim().substring(0, 4), 10);
+      } else {
+        const d = new Date(data.currentYear);
+        if (!isNaN(d.getTime())) {
+          yearNum = d.getFullYear();
+        }
+      }
+      const maxYear = new Date().getFullYear() + 2;
+      if (isNaN(yearNum) || yearNum < 1970 || yearNum > maxYear) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Passing year cannot be in the past",
+          message: `Please enter a valid passing year (1970 - ${maxYear})`,
           path: ["currentYear"],
         });
       }
@@ -612,7 +619,7 @@ export default function ApplyFormScreen() {
           institution: values.institution,
           major: values.major,
           graduation_date: isSchoolFromForm ? "" : values.gradDate,
-          current_year: isSchoolFromForm ? "" : values.currentYear,
+          current_year: isSchoolFromForm ? (values.currentYear ? (values.currentYear.includes("-") ? values.currentYear.substring(0, 4) : values.currentYear) : "") : values.currentYear,
           gpa: values.gpa,
           activities: values.activities,
           financial_info: values.financial,
@@ -1404,7 +1411,8 @@ export default function ApplyFormScreen() {
         minimumDate={datePickerState.minimumDate || new Date(1990, 0, 1)}
         maximumDate={new Date(2040, 11, 31)}
         onConfirm={(date) => {
-          const formatted = date.toISOString().split('T')[0];
+          const isYearOnly = datePickerState.field === "currentYear";
+          const formatted = isYearOnly ? String(date.getFullYear()) : date.toISOString().split('T')[0];
           if (datePickerState.field) {
             setValue(datePickerState.field, formatted);
             clearErrors(datePickerState.field);

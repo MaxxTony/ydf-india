@@ -1,7 +1,7 @@
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -92,11 +92,16 @@ export default function StudentQuizAttempt() {
             hasAttemptedRef.current = true;
         }
 
-        // 2. Mark as review/completed if on review page
+        // 2. Mark as review/completed if on review page and auto-return
         if (u.includes("review.php")) {
             hasAttemptedRef.current = true;
             hasCompletedRef.current = true;
             setIsFinished(true);
+            if (!autoCloseTimeoutRef.current) {
+                autoCloseTimeoutRef.current = setTimeout(() => {
+                    router.back();
+                }, 1500);
+            }
         }
 
         // 3. Mark as finished and auto-return if returned to view.php AFTER attempting or reviewing
@@ -108,6 +113,14 @@ export default function StudentQuizAttempt() {
                 }, 800);
             }
         }
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (autoCloseTimeoutRef.current) {
+                clearTimeout(autoCloseTimeoutRef.current);
+            }
+        };
     }, []);
 
     // ── No URL guard ──────────────────────────────────────────────────────────

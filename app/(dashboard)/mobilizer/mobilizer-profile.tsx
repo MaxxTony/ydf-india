@@ -239,18 +239,10 @@ export default function MobilizerProfileScreen() {
                             </View>
                         ) : null}
 
-                        {isValidValue(profile?.city) || isValidValue(state) ? (
+                        {isValidValue(profile?.city) ? (
                             <View style={styles.heroMetaRow}>
                                 <Ionicons name="location-outline" size={13} color="rgba(255,255,255,0.75)" />
-                                <Text style={styles.heroMetaText}>{[profile?.city, state].filter(isValidValue).join(", ")}</Text>
-                            </View>
-                        ) : null}
-
-                        {/* Application Status Badge */}
-                        {applStatus ? (
-                            <View style={[styles.statusBadge, { backgroundColor: applStatusColor + "22", borderColor: applStatusColor + "88" }]}>
-                                <View style={[styles.statusDot, { backgroundColor: applStatusColor }]} />
-                                <Text style={[styles.statusText, { color: "#fff" }]}>Application: {applStatus}</Text>
+                                <Text style={styles.heroMetaText}>{profile.city}</Text>
                             </View>
                         ) : null}
 
@@ -289,7 +281,7 @@ export default function MobilizerProfileScreen() {
                             <InfoRow icon="mail-outline" label="Email Address" value={profile?.email} color="#2563eb" />
                             <InfoRow icon="call-outline" label="Phone Number" value={cleanPhone(profile?.phone1 || profile?.phone2 || "")} color="#10B981" />
                             <InfoRow icon="phone-portrait-outline" label="Alt. Phone" value={profile?.phone2 !== profile?.phone1 ? cleanPhone(profile?.phone2 || "") : ""} color="#06B6D4" />
-                            <InfoRow icon="location-outline" label="City / State" value={[profile?.city, state].filter(isValidValue).join(", ")} color="#F59E0B" isLast />
+                            <InfoRow icon="location-outline" label="City" value={profile?.city || profile?.address} color="#F59E0B" isLast />
                         </View>
                     </View>
 
@@ -298,48 +290,9 @@ export default function MobilizerProfileScreen() {
                         <SectionTitle title="Personal Information" icon="person-outline" />
                         <View style={[styles.card, { backgroundColor: isDark ? colors.card : "#fff", borderColor: isDark ? colors.border : "#eee" }]}>
                             <InfoRow icon="person-outline" label="Gender" value={gender} color="#8B5CF6" />
-                            <InfoRow icon="calendar-outline" label="Date of Birth" value={dob} color="#EC4899" />
-                            <InfoRow icon="heart-outline" label="Religion" value={religion} color="#F59E0B" />
-                            <InfoRow icon="people-outline" label="Caste Category" value={caste} color="#10B981" />
-                            <InfoRow icon="wallet-outline" label="Family Income" value={familyIncome} color="#6366F1" isLast />
+                            <InfoRow icon="calendar-outline" label="Date of Birth" value={dob} color="#EC4899" isLast />
                         </View>
                     </View>
-
-                    {/* ── Location Info ─────────────────────────────────────── */}
-                    {isValidValue(state) || isValidValue(district) || isValidValue(domicileDistrict) ? (
-                        <View style={styles.section}>
-                            <SectionTitle title="Location Details" icon="map-outline" />
-                            <View style={[styles.card, { backgroundColor: isDark ? colors.card : "#fff", borderColor: isDark ? colors.border : "#eee" }]}>
-                                <InfoRow icon="business-outline" label="State" value={state} color="#2563eb" />
-                                <InfoRow icon="navigate-outline" label="District" value={district} color="#F59E0B" />
-                                <InfoRow icon="home-outline" label="Domicile District" value={domicileDistrict !== district ? domicileDistrict : ""} color="#10B981" isLast />
-                            </View>
-                        </View>
-                    ) : null}
-
-                    {/* ── Academic Info ─────────────────────────────────────── */}
-                    {isValidValue(board12th) || isValidValue(stream12th) || isValidValue(passing10th) || isValidValue(passing12th) ? (
-                        <View style={styles.section}>
-                            <SectionTitle title="Academic Details" icon="school-outline" />
-                            <View style={[styles.card, { backgroundColor: isDark ? colors.card : "#fff", borderColor: isDark ? colors.border : "#eee" }]}>
-                                <InfoRow icon="ribbon-outline" label="10th Passing Year" value={passing10th} color="#10B981" />
-                                <InfoRow icon="ribbon-outline" label="12th Board" value={board12th} color="#2563eb" />
-                                <InfoRow icon="book-outline" label="Stream (12th)" value={stream12th} color="#8B5CF6" />
-                                <InfoRow icon="ribbon-outline" label="12th Passing Year" value={passing12th} color="#F59E0B" isLast />
-                            </View>
-                        </View>
-                    ) : null}
-
-                    {/* ── Application Info ──────────────────────────────────── */}
-                    {isValidValue(applStatus) || isValidValue(schemeName) ? (
-                        <View style={styles.section}>
-                            <SectionTitle title="Application Details" icon="document-text-outline" />
-                            <View style={[styles.card, { backgroundColor: isDark ? colors.card : "#fff", borderColor: isDark ? colors.border : "#eee" }]}>
-                                <InfoRow icon="checkmark-circle-outline" label="Application Status" value={applStatus} color={applStatusColor} />
-                                <InfoRow icon="layers-outline" label="Scheme Name" value={schemeName !== "other" ? schemeName : "Other"} color="#6366F1" isLast />
-                            </View>
-                        </View>
-                    ) : null}
 
 
 

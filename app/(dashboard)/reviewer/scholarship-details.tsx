@@ -719,18 +719,6 @@ export default function ReviewerScholarshipDetailsScreen() {
 
                           // ── QUIZ → dedicated status card ─────────────────────
                           if (isQuiz) {
-                            const quizStatus = isCompleted
-                              ? 'completed'
-                              : activity.state === 'inprogress'
-                                ? 'inprogress'
-                                : 'pending';
-
-                            const quizBadgeConfig = {
-                              completed: { bg: '#DCFCE7', dot: '#166534', text: '#166534', label: 'Completed', icon: 'checkmark-circle' as const },
-                              inprogress: { bg: '#DBEAFE', dot: '#1D4ED8', text: '#1D4ED8', label: 'In Progress', icon: 'play-circle' as const },
-                              pending: { bg: '#FEF3C7', dot: '#D97706', text: '#92400E', label: 'Pending', icon: 'time' as const },
-                            }[quizStatus];
-
                             const ItemContainer = TouchableOpacity;
                             return (
                               <ItemContainer
@@ -754,10 +742,10 @@ export default function ReviewerScholarshipDetailsScreen() {
                                       {activity.name}
                                     </Text>
                                     <View style={styles.docStatusRow}>
-                                      <View style={[styles.statusMiniBadge, { backgroundColor: quizBadgeConfig.bg }]}>
-                                        <Ionicons name={quizBadgeConfig.icon} size={11} color={quizBadgeConfig.dot} />
-                                        <Text style={[styles.statusMiniText, { color: quizBadgeConfig.text }]}>
-                                          {quizBadgeConfig.label}
+                                      <View style={[styles.statusMiniBadge, { backgroundColor: colors.primary + '15' }]}>
+                                        <Ionicons name="help-circle-outline" size={11} color={colors.primary} />
+                                        <Text style={[styles.statusMiniText, { color: colors.primary }]}>
+                                          Quiz
                                         </Text>
                                       </View>
                                     </View>
@@ -766,7 +754,7 @@ export default function ReviewerScholarshipDetailsScreen() {
                                   {/* Action indicator */}
                                   <View style={[styles.quizChevronBox, { backgroundColor: colors.primary + '12' }]}>
                                     <Ionicons
-                                      name={quizStatus === 'completed' ? 'eye-outline' : 'chevron-forward'}
+                                      name="chevron-forward"
                                       size={14}
                                       color={colors.primary}
                                     />
@@ -802,7 +790,7 @@ export default function ReviewerScholarshipDetailsScreen() {
                                   </View>
                                   <View style={[styles.quizChevronBox, { backgroundColor: '#0EA5E912' }]}>
                                     <Ionicons
-                                      name={isCompleted ? 'checkmark-circle' : 'chevron-forward'}
+                                      name="chevron-forward"
                                       size={14}
                                       color="#0EA5E9"
                                     />
@@ -853,7 +841,7 @@ export default function ReviewerScholarshipDetailsScreen() {
                                   </View>
                                   <View style={[styles.quizChevronBox, { backgroundColor: config.color + '12' }]}>
                                     <Ionicons
-                                      name={isCompleted ? 'checkmark-circle' : 'chevron-forward'}
+                                      name="chevron-forward"
                                       size={14}
                                       color={config.color}
                                     />
